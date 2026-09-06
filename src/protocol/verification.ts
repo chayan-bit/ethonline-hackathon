@@ -1,6 +1,7 @@
 import { setTimeout } from 'node:timers/promises';
 import { isDeepStrictEqual } from 'node:util';
 import type { PaymentPayload } from '@x402/core/types';
+import type { Address } from 'viem';
 import type { Purchase, Quote } from '../service/gateway.ts';
 
 type SavedRequest = { quote: Quote; payment: PaymentPayload };
@@ -19,11 +20,11 @@ export function validateAndReconcilePurchase(input: unknown, expectedId: string,
   return result as BoundPurchase;
 }
 
-export function validateQuote(input: unknown, request: Quote['request'], provider: { price: string; payTo: string }, feePayer: string, now: number): Quote {
+export function validateQuote(input: unknown, request: Quote['request'], provider: { price: string; payTo: string }, feePayer: string, expectedLedger: Address, now: number): Quote {
   if (!input || typeof input !== 'object' || Array.isArray(input) || !Number.isSafeInteger(now)) throw new Error('unsafe_quote');
   const quote = input as Quote;
   const requirements = quote.requirements;
-  if (!requirements || !isDeepStrictEqual(quote.request, request) || requirements.network !== 'hedera:testnet'
+  if (!requirements || !isDeepStrictEqual(quote.request, request) || quote.ledger_address?.toLowerCase() !== expectedLedger.toLowerCase() || requirements.network !== 'hedera:testnet'
     || requirements.asset !== '0.0.0' || requirements.amount !== provider.price || requirements.payTo !== provider.payTo
     || requirements.scheme !== 'exact' || requirements.extra?.feePayer !== feePayer
     || !Number.isSafeInteger(quote.created_at) || quote.created_at > now || !Number.isSafeInteger(quote.expires_at)

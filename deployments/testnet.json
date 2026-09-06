@@ -10,5 +10,63 @@
     "block": 40158236
   },
   "topic_id": "0.0.10384701",
-  "agent_transaction_id": "0.0.10384424@1788651028.560425517"
+  "agent_transaction_id": "0.0.10384424@1788651028.560425517",
+  "active_ledger": {
+    "address": "0x2B90651860e98e3530bC2B67Aa919922EeD39E2B",
+    "transaction_id": "0.0.10384424@1788667985.228083231",
+    "native_id": "0.0.10387543",
+    "block": 40166299,
+    "pyth_address": "0x0B38666C2A6E89EB78c53c3098001E8c904a8b63"
+  },
+  "ledger_cohorts": [
+    {
+      "address": "0x00000000000000000000000000000000009e753c",
+      "deployment_block": 40158236,
+      "pyth_address": "0xA2aa501b19aff244D90cc15a4Cf739D2725B5729"
+    },
+    {
+      "address": "0x2B90651860e98e3530bC2B67Aa919922EeD39E2B",
+      "deployment_block": 40166299,
+      "pyth_address": "0x0B38666C2A6E89EB78c53c3098001E8c904a8b63"
+    }
+  ],
+  "subscription_buyer_topup": {
+    "from": "0.0.10384424",
+    "to": "0.0.10384426",
+    "amount_tinybars": "500000000",
+    "transaction_id": "0.0.10384424@1788669966.803258967",
+    "fee_tinybars": "123251"
+  },
+  "subscription_token": {
+    "id": "0.0.10387834",
+    "address": "0x00000000000000000000000000000000009e817a",
+    "name": "SignalMarketTestToken",
+    "symbol": "SMTT",
+    "decimals": 6,
+    "initial_supply_atomic": "100000000",
+    "max_supply_atomic": "100000000",
+    "creation_transaction_id": "0.0.10384424@1788669973.009499658",
+    "buyer_funding_target_atomic": "10000000",
+    "buyer_association_transaction_id": "0.0.10384426@1788670135.088730267",
+    "buyer_funding_transaction_id": "0.0.10384424@1788670143.539058246"
+  },
+  "subscription_vault": {
+    "address": "0x66d98EE5b9aaB0986aA52C99de491b04a31B24F5",
+    "native_id": "0.0.10387915",
+    "transaction_id": "0.0.10384424@1788670359.278433755",
+    "hts_address": "0x0000000000000000000000000000000000000167",
+    "schedule_service_address": "0x000000000000000000000000000000000000016B"
+  },
+  "subscription_ledger": {
+    "address": "0x874e8C3015cf1268f2E3B25Ffb92788DcA1F85bD",
+    "native_id": "0.0.10387917",
+    "transaction_id": "0.0.10384424@1788670364.637306118",
+    "block": 40167272
+  },
+  "subscription_agent": {
+    "id": "2",
+    "registration_transaction_id": "0.0.10384424@1788670371.564266575",
+    "metadata_uri": "https://valium-meant-atomic-articles.trycloudflare.com/v1/metadata/2",
+    "metadata_hash": "0x0032ee3b50ef0273004c55f6fc1f3e5215589ce2e9a7add1cdb1e8a06d0ec831"
+  }
 }

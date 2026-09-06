@@ -4,6 +4,13 @@ import { dirname } from 'node:path';
 import type { Purchase } from './gateway.ts';
 import { isDeepStrictEqual } from 'node:util';
 
+const isCompatibleQuote = (current: Purchase['quote'], next: Purchase['quote']) => {
+  if (isDeepStrictEqual(current, next)) return true;
+  if (current.ledger_address || !next.ledger_address) return false;
+  const { ledger_address: _, ...withoutLedger } = next;
+  return isDeepStrictEqual(current, withoutLedger);
+};
+
 export class Store {
   private readonly db: DatabaseSync;
 
@@ -40,7 +47,7 @@ export class Store {
     this.db.exec('BEGIN IMMEDIATE');
     try {
       const current = this.purchase(p.quote.request.request_id);
-      if (current && (!isDeepStrictEqual(current.quote, p.quote)
+      if (current && (!isCompatibleQuote(current.quote, p.quote)
         || (current.prepared && !isDeepStrictEqual(current.prepared, p.prepared))
         || (current.payment_ref && current.payment_ref !== p.payment_ref)
         || (current.payment && !isDeepStrictEqual(current.payment, p.payment))

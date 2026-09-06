@@ -43,7 +43,7 @@ Use these defaults to begin implementation and record changes with reasons rathe
 - HCS audit receipts containing no unrevealed forecast data.
 - One real complete payment-to-grade demonstration, reproducible tests, setup instructions, transaction evidence, and submission materials.
 
-### P1: implement after P0 passes end to end
+### P1: implement in parallel after explicit owner authorization; release separately from P0
 
 - Prepaid Subscription Vault with bounded deposits, manual checkpoint, claim, and cancellation.
 - Subscriber authentication and entitlement checks at the provider gateway.
@@ -54,6 +54,9 @@ Use these defaults to begin implementation and record changes with reasons rathe
 P1 is retained from the source design, not removed from the product.
 Report P0 and P1 completion separately; the AI must not call the entire specification complete with P1 unfinished.
 For a time-limited submission, P0 is the first usable deliverable.
+
+**Owner sequencing update, 6 September 2026:** P1 implementation may proceed in parallel with unresolved P0 oracle work after explicit owner authorization.
+This changes implementation sequencing only; it does not mark P0 complete, waive the live Pyth grading gate, alter historical grades, or relax any reveal, quality, payment, or financial-safety requirement.
 
 ### Explicit exclusions
 
@@ -528,7 +531,7 @@ Build the indexer, metric API, discovery/profile/evidence/activity UI, and auton
 Prove AT-14 through AT-19 and the full UI journey.
 P0 is complete only when all P0 tests pass and the real lifecycle evidence is present.
 
-### Milestone 5: subscriptions
+### Milestone 5: subscriptions, authorized for parallel implementation
 
 Implement the vault and manual exit paths first, then entitlement checks, then scheduling.
 Run the financial invariants and failure tests before demonstrating automation.
@@ -561,7 +564,8 @@ Recheck event rules and deadlines before building/submitting; this specification
 ## 14. Copy-paste implementation handoff
 
 > Read `requirements-spec.md` and `final-system-design.md` in this folder.
-> Implement this specification in milestone order, delivering and verifying P0 before starting P1.
+> Implement this specification in milestone order where dependencies require, while allowing explicitly authorized P1 work to proceed in parallel with P0.
+> Deliver and verify P0 before claiming P0 completion or releasing the combined system; keep P0 and P1 completion separate.
 > The reveal policy is locked: no financial reward, payout release, refund, or slash depends on revealing or grading; keep reveal percentage separate from quality and actually use it in seller discovery and buyer selection.
 > Implement reveal independently from oracle grading so oracle failures cannot suppress valid reveals.
 > Treat defaults as starting choices, preserve the stated semantics, and record any necessary changes with reasons.

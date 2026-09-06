@@ -5,7 +5,7 @@ import { loadConfig } from './adapters/config.ts';
 import { facilitator, inspectPayment, paymentReference } from './adapters/payment.ts';
 import { accountAddress } from './adapters/hedera.ts';
 import { fetchJson, record } from './adapters/http.ts';
-import { Ledger } from './adapters/ledger.ts';
+import { LedgerRouter } from './adapters/ledger.ts';
 import { Store } from './service/store.ts';
 import { bodyHash, type AuthScope } from './service/auth.ts';
 import { DEFAULT_POLICY, parseProviders, selectProvider } from './protocol/discovery.ts';
@@ -49,7 +49,7 @@ async function verifyResult(input: unknown, expectedId: string) {
   const s = prepared.signal;
   if (s.request_id !== saved.request.request_id || s.agent_id !== saved.request.agent_id || s.price_feed_id !== saved.request.price_feed_id || s.target_time !== saved.request.target_time) throw new Error('invalid_signal_response');
   store.put('responses_unverified', expectedId, result);
-  const ledger = new Ledger(config, store);
+  const ledger = new LedgerRouter(config, store).forQuote(result.quote);
   const commitment = await confirmCommitment(expectedId, prepared.hash, id => ledger.commitment(id));
   if (commitment.agent_id !== s.agent_id || commitment.price_feed_id !== s.price_feed_id || commitment.target_time !== s.target_time
     || commitment.payment_ref !== paymentReference(result.payment_ref) || commitment.amount !== result.quote.requirements.amount
@@ -76,7 +76,8 @@ async function purchase(key: PrivateKey) {
   if (response.status !== 402) throw new Error('expected_x402_quote');
   const quoteResponse = record(await response.json()).quote;
   const feePayer = await facilitator(config).feePayer();
-  const quote = validateQuote(quoteResponse, request, selection.selected, feePayer, Math.floor(Date.now() / 1000));
+  if (!config.ledgerAddress) throw new Error('ledger_not_deployed');
+  const quote = validateQuote(quoteResponse, request, selection.selected, feePayer, config.ledgerAddress, Math.floor(Date.now() / 1000));
   store.reserve(request.request_id, request.agent_id, new Date().toISOString().slice(0, 10), BigInt(quote.requirements.amount), caps.provider, caps.global);
   let payment: PaymentPayload;
   let authorization: string;

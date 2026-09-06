@@ -11,10 +11,10 @@ Forecast quality is computed separately from payment and reveal coverage.
 The public demo currently runs at [the temporary quick tunnel](https://valium-meant-atomic-articles.trycloudflare.com).
 The tunnel is temporary, runs from the operator's Mac, and exists only while the local server and tunnel process remain alive.
 
-The live service is configured for `hedera:testnet`, with registry `0x00000000000000000000000000000000009e74b9`, ledger `0x00000000000000000000000000000000009e753c`, and HCS topic `0.0.10384701`.
+The live service is configured for `hedera:testnet`, with registry `0x00000000000000000000000000000000009e74b9`, current ledger `0x2B90651860e98e3530bC2B67Aa919922EeD39E2B`, legacy ledger `0x00000000000000000000000000000000009e753c`, and HCS topic `0.0.10384701`.
 
-Two real x402 payments of `0.001 HBAR` are indexed and publicly revealed.
-The current public metrics are two eligible paid samples, two revealed samples, `reveal_pct: 100`, zero grades, and two `oracle_unavailable` samples.
+Three real x402 payments of `0.001 HBAR` are indexed and publicly revealed.
+The current public metrics are three eligible paid samples, three revealed samples, `reveal_pct: 100`, one grade, `grade_coverage_pct: 33.3`, and two legacy `oracle_unavailable` samples.
 The default buyer policy still rejects this provider because it requires five eligible samples.
 Use `--allow-unproven` only when an operator intentionally enables a bounded exploratory purchase.
 
@@ -24,7 +24,23 @@ With no eligible history, `reveal_pct` is `null`.
 
 Pyth historical fetches work through Hermes, but the official Hedera testnet Pyth contract currently rejects the fetched proof with `InvalidWormholeVaa`.
 The preflight records this as `oracle_compatible: false` and exits with status 2 intentionally.
-P0 can be evidenced through the reveal boundary but cannot be claimed complete until the grade gate passes, and P1 has not started.
+The receipt-backed current verifier and one fresh paid current-cohort grade are now evidenced.
+P1 implementation may proceed in parallel under the [P1 plan](docs/p1-parallel-plan.md), but P1 completion and release remain separately gated.
+The operator has approved the bounded project-operated Pyth self-deployment path described in [docs/oracle-upgrade-plan.md](docs/oracle-upgrade-plan.md).
+The receipt-backed verifier is deployed at `0x0B38666C2A6E89EB78c53c3098001E8c904a8b63` / native `0.0.10387542`, and the coexisting current SignalLedger is `0x2B90651860e98e3530bC2B67Aa919922EeD39E2B` / native `0.0.10387543`.
+The deployment consumed `1,199,317,485` tinybars, or `11.99317485 HBAR`, and passed the recorded runtime, proxy, guardian, source, zero-owner, immutable, authentic-proof, and corrupted-proof checks.
+The pinned upstream source is not an official Pyth Hedera deployment or endorsement.
+The public switch is live and request `0x10d7ceb8b712edbe1738d0405e3b9b448610642353af3b4e672ca11b4a5158dc` completed a fresh paid current-cohort lifecycle on the new ledger.
+The request paid exactly `100000` tinybars from buyer `0.0.10384426` to provider `0.0.10384424`, was revealed at `1788668709`, and was graded at `1788668786` with prediction `-3` bps, actual `-17` bps, and absolute error `14` bps.
+The separate facilitator fee was `246502` tinybars paid by `0.0.7162784`.
+The post-grace aggregate now reports three eligible samples, `100%` reveal coverage, one grade, `33.3%` grade coverage, `0.0%` directional hit rate, and `14.0` bps mean absolute error.
+The reported false directional result is correct under the five-basis-point neutral band because prediction `-3` is neutral while actual `-17` is negative.
+
+P1 is partially live.
+SMTT `0.0.10387834`, SubscriptionVault `0.0.10387915`, SubscriptionLedger `0.0.10387917`, and subscription agent `2` are deployed, and two distinct-party subscriptions were manually cancelled or closed with exact token and HBAR reserve conservation.
+The live scheduled callback returned early because its EVM timestamp was two seconds behind its scheduled callback timestamp, so automatic settlement is unproven.
+The source includes a tested bounded skew fix, but that fix is not deployed.
+No subscription forecast commitment, reveal, HCS audit, or grade was broadcast.
 
 See [the status report](docs/status-report.md), [the live API snapshot](docs/evidence/live-api-snapshot.json), [the UI validation](docs/ui-validation.md), and [the short demo script](docs/demo-script.md) for the evidence boundary.
 
@@ -183,17 +199,17 @@ Private purchase recovery requires a short-lived wallet proof bound to buyer, re
 
 | Milestone | Status | Evidence or remaining gate |
 | --- | --- | --- |
-| M0 dependency proof | Partial | Hedera, Blocky402, Hermes fetch, contracts, and public deployment are present; official Pyth proof compatibility is blocked by `InvalidWormholeVaa`. |
+| M0 dependency proof | Partial | Hedera, Blocky402, Hermes fetch, contracts, and public deployment are present; the official legacy Pyth path remains blocked by `InvalidWormholeVaa`, while the receipt-backed project-operated verifier and current lifecycle pass. |
 | M1 deterministic protocol | Partial | Registry and ledger are deployed; Sourcify reports exact runtime matches; creation matches are still null. |
-| M2 paid vertical slice | Live verified | Two real `0.001 HBAR` x402 payments, durable commitment records, buyer verification, and resume recovery are evidenced. |
-| M3 reveal, grade, and audit | Reveal live; grade blocked | Both samples are revealed and HCS receipts exist; oracle grading remains unavailable until the Pyth compatibility gate is resolved. |
-| M4 discovery and end-to-end proof | Partial | Public UI/API, canonical safe-block indexer checks, exact reveal policy, evidence records, and temporary service are live; browser acceptance for the current flow is cleared, while grading and final P0 acceptance mapping remain. |
-| P1 extensions | Not started | Subscription vault, scheduled checkpoints, second provider or horizon, and deeper A2A work remain out of scope until P0 passes. |
+| M2 paid vertical slice | Live verified | Three real `0.001 HBAR` x402 payments, durable commitment records, buyer verification, and resume recovery are evidenced. |
+| M3 reveal, grade, and audit | Current lifecycle verified; aggregate verified | The two legacy samples remain revealed and ungraded, while the current-ledger request has verified payment, reveal, HCS, and grade evidence; aggregate eligibility is now three samples with one grade. |
+| M4 discovery and end-to-end proof | Current flow verified | Public UI/API, canonical safe-block indexer checks, exact reveal policy, evidence records, current grade, post-grace aggregate metrics, and temporary service are live; remaining P0 work is limited to the documented non-grade acceptance boundaries. |
+| P1 extensions | Partial live evidence; not complete | SMTT, the vault, vault-bound ledger, agent `2`, and two manual subscription settlements are live. Automatic scheduled settlement failed on timestamp skew, the tested local fix is undeployed, and subscription forecast commitment/reveal/grade evidence is absent. |
 
 Run `npm run compile`, `npm run check`, `npm run test:coverage`, and `npm run preflight` before treating a checkout as a release candidate.
 The preflight exit status 2 is intentional while the oracle compatibility result is false.
-The latest completed green run passed 46 unit tests and 13 contract tests.
-The latest coverage run reported 94.57% statement and line coverage overall, 93.78% for service modules, and 82.55% for the indexer, above the enforced 80% floor.
+The latest completed green run passed 109 unit tests and 31 contract tests.
+The latest coverage run reported 94.48% statement and line coverage overall, above the enforced 80% floor.
 
 The exact remaining P0 acceptance boundary is mapped in [the status report](docs/status-report.md).
 
@@ -202,12 +218,16 @@ The exact remaining P0 acceptance boundary is mapped in [the status report](docs
 Deployment addresses are recorded in [deployments/testnet.json](deployments/testnet.json).
 Sourcify verification jobs are recorded in [docs/evidence/verification-jobs.json](docs/evidence/verification-jobs.json).
 The read-only Pyth preflight is recorded in [docs/evidence/preflight.json](docs/evidence/preflight.json).
-The current public API summary and two paid records are recorded in [docs/evidence/live-api-snapshot.json](docs/evidence/live-api-snapshot.json).
+The legacy public API summary and two historical paid records are recorded in [docs/evidence/live-api-snapshot.json](docs/evidence/live-api-snapshot.json).
+The current paid lifecycle is available from the [read-only signal API](https://valium-meant-atomic-articles.trycloudflare.com/v1/signals/0x10d7ceb8b712edbe1738d0405e3b9b448610642353af3b4e672ca11b4a5158dc).
+The receipt-backed verifier and current-ledger evidence are recorded in [docs/evidence/pyth-pro-recovery.md](docs/evidence/pyth-pro-recovery.md), [deployments/oracle-attestation.json](deployments/oracle-attestation.json), and the operator-local [data/pyth-pro-deployment.json](data/pyth-pro-deployment.json).
 
 The public tunnel is a temporary quick tunnel from the operator machine and can disappear without notice.
 The indexer can lag Mirror Node consensus, so the API exposes `indexed_through`, `lag_seconds`, and `is_stale`.
-The two current paid samples share one paying wallet and are not a Sybil-resistant trust score.
-Both samples are publicly revealed but have no grade because the Pyth proof is rejected by the configured testnet contract.
+The three current paid samples share one paying wallet and are not a Sybil-resistant trust score.
+The two legacy samples are publicly revealed but have no grade because their configured legacy Pyth contract rejects the current proof.
+The receipt-backed current ledger now has one paid sample with verified reveal and grade evidence.
+Controlled deployment and lifecycle fees total `13.02856993 HBAR`, comprising `11.99317485 HBAR` for deployment, `1.03439508 HBAR` for commit/HCS/reveal/grade, and `0.001 HBAR` for the paid request; the separate facilitator network fee was `0.00246502 HBAR`.
 The current package uses SDK `2.85.0` with pinned patched transitive dependencies for gRPC, protobuf, WebSocket, and cryptography.
 Production dependency audit is reported as zero findings after those overrides, while 11 low development findings remain.
 The temporary Hermes trial key must be renewed within 14 days; no paid Pyth plan has been purchased.

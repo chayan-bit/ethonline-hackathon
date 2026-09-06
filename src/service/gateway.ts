@@ -1,18 +1,20 @@
 import { isDeepStrictEqual } from 'node:util';
 import { Ajv } from 'ajv';
 import type { PaymentPayload, PaymentRequirements } from '@x402/core/types';
-import type { Hex } from 'viem';
+import type { Address, Hex } from 'viem';
 import { SCHEMA, ETH_USD, POLICY, assertCommitTiming, hashSignal, parseSignal, type Signal } from '../protocol/signal.ts';
 import type { Store } from './store.ts';
 
 export type BuyRequest = { request_id: string; buyer: string; agent_id: string; schema: string; price_feed_id: Hex; target_time: number };
-export type Quote = { request: BuyRequest; requirements: PaymentRequirements; created_at: number; expires_at: number };
+export type Quote = { request: BuyRequest; requirements: PaymentRequirements; created_at: number; expires_at: number; ledger_address?: Address };
 export type Prepared = { signal: Signal; salt: Hex; hash: Hex };
 export type Purchase = {
   quote: Quote; status: 'quoted' | 'prepared' | 'settlement_pending' | 'paid' | 'commit_pending' | 'delivered' | 'paid_commit_failed' | 'payment_failed';
   prepared?: Prepared; payment?: PaymentPayload; payment_ref?: string; commitment?: { transaction_id: string }; error?: string;
 };
 export type GatewayEffects = {
+  activeLedgerAddress: Address;
+  legacyLedgerAddress?: Address;
   now(): number;
   seller(): Promise<{ agent_id: string; payTo: string; price: string; active: boolean }>;
   feePayer(): Promise<string>;
@@ -44,14 +46,14 @@ export class Gateway {
     const existing = this.store.purchase(request.request_id);
     if (existing) {
       if (!isDeepStrictEqual(existing.quote.request, request)) throw new Error('request_conflict');
-      return existing.quote;
+      return this.bindLegacyLedger(existing).quote;
     }
     const seller = await this.effects.seller();
     if (!seller.active || seller.agent_id !== request.agent_id) throw new Error('inactive_provider');
     const now = this.effects.now();
     if (!this.store.quoteCapacity(now)) throw new Error('quote_capacity_exceeded');
     if (request.target_time < now + POLICY.minLead + POLICY.issueTolerance || request.target_time > now + POLICY.maxLead) throw new Error('invalid_target');
-    const quote: Quote = { request: { ...request }, created_at: now, expires_at: now + 120,
+    const quote: Quote = { request: { ...request }, created_at: now, expires_at: now + 120, ledger_address: this.effects.activeLedgerAddress,
       requirements: { scheme: 'exact', network: 'hedera:testnet', asset: '0.0.0', amount: seller.price, payTo: seller.payTo, maxTimeoutSeconds: 120, extra: { feePayer: await this.effects.feePayer() } },
     };
     const raced = this.store.purchase(request.request_id);
@@ -64,8 +66,9 @@ export class Gateway {
   }
 
   async purchase(id: string, payment: PaymentPayload): Promise<Purchase> {
-    const p = this.store.purchase(id);
-    if (!p) throw new Error('unknown_request');
+    const stored = this.store.purchase(id);
+    if (!stored) throw new Error('unknown_request');
+    const p = this.bindLegacyLedger(stored);
     if (payment.x402Version !== 2 || !isDeepStrictEqual(payment.accepted, p.quote.requirements)) throw new Error('quote_mismatch');
     if (p.payment && !isDeepStrictEqual(p.payment, payment)) throw new Error('payment_conflict');
     const current = this.inflight.get(id);
@@ -76,6 +79,12 @@ export class Gateway {
   }
 
   private save(p: Purchase): Purchase { this.store.savePurchase(p); return p; }
+
+  private bindLegacyLedger(p: Purchase): Purchase {
+    if (p.quote.ledger_address) return p;
+    if (!this.effects.legacyLedgerAddress) throw new Error('legacy_ledger_unbound');
+    return this.save({ ...p, quote: { ...p.quote, ledger_address: this.effects.legacyLedgerAddress } });
+  }
 
   private async prepare(p: Purchase, payment: PaymentPayload): Promise<Purchase> {
     if (this.effects.now() >= p.quote.expires_at) throw new Error('quote_expired');

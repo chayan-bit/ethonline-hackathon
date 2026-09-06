@@ -47,23 +47,21 @@
             ↻ Refresh
           </button>
         </div>
-        <div class="notice" id="oracle-notice">
+        <div class="notice" id="oracle-notice" hidden>
           <span class="notice-symbol">i</span>
           <div>
-            <strong>Grading is temporarily unavailable</strong>
-            <p>
-              Current Pyth updates cannot yet be verified on Hedera testnet.
-              Predictions can still be revealed; reveal coverage is measured
-              separately.
+            <strong id="oracle-title">Checking oracle status</strong>
+            <p id="oracle-description">
+              Reading current and legacy oracle status.
             </p>
           </div>
           <span class="notice-tag">ORACLE STATUS</span>
         </div>
         <div class="stats-grid" aria-label="Marketplace statistics">
           <article class="stat">
-            <div>Eligible paid forecasts</div>
+            <div id="stat-paid-label">Eligible paid forecasts</div>
             <strong id="stat-paid">—</strong
-            ><span>Trailing 30 days · after grace</span>
+            ><span id="stat-paid-caption">Trailing 30 days · after grace</span>
           </article>
           <article class="stat">
             <div>Public reveal coverage</div>
@@ -71,9 +69,9 @@
             ><span id="stat-reveal-caption">Waiting for indexed evidence</span>
           </article>
           <article class="stat">
-            <div>Oracle-backed grades</div>
+            <div id="stat-grades-label">Oracle-backed grades</div>
             <strong id="stat-grades">—</strong
-            ><span>Independent of payment</span>
+            ><span id="stat-grades-caption">Independent of payment</span>
           </article>
           <article class="stat">
             <div>Protocol fee</div>
@@ -85,10 +83,22 @@
           <h2>
             Providers <span class="count-badge" id="provider-count">1</span>
           </h2>
-          <div class="freshness" id="freshness">Connecting to testnet…</div>
+          <div class="section-status">
+            <span class="cohort-chip" id="selected-cohort"
+              >Selected cohort: x402</span
+            >
+            <span class="freshness" id="freshness">Connecting to testnet…</span>
+          </div>
         </div>
         <form class="filter-bar" id="filters">
-          <label for="min-reveal"
+          <label for="payment-mode"
+            >Payment mode
+            <select id="payment-mode" name="payment_mode">
+              <option value="x402" selected>Pay per signal · x402</option>
+              <option value="subscription">Prepaid subscription</option>
+            </select>
+          </label>
+          <label for="min-reveal" data-payment-mode="x402"
             >Minimum reveal
             <div class="input-unit">
               <input
@@ -101,7 +111,7 @@
                 step="1"
               /><span>%</span>
             </div></label
-          ><label for="min-samples"
+          ><label for="min-samples" data-payment-mode="x402"
             >Minimum samples
             <input
               id="min-samples"
@@ -110,7 +120,7 @@
               min="0"
               value="5"
               step="1" /></label
-          ><label for="max-price"
+          ><label for="max-price" data-payment-mode="x402"
             >Maximum price
             <div class="input-unit">
               <input
@@ -125,11 +135,18 @@
               /><span>HBAR</span>
             </div>
             <small id="max-price-help">Up to 8 decimal places</small></label
-          ><label class="checkbox-label" for="allow-unproven"
+          ><label
+            class="checkbox-label"
+            for="allow-unproven"
+            data-payment-mode="x402"
             ><input id="allow-unproven" name="allow_unproven" type="checkbox" />
             Allow unproven providers</label
           ><button class="primary" type="submit">Apply policy</button>
         </form>
+        <p class="mode-policy-note" id="mode-policy-note" hidden>
+          Subscription mode does not use HBAR price, reveal, or sample
+          eligibility filters; inspect token terms and sampled evidence instead.
+        </p>
         <div class="policy-result" id="policy-result" role="status">
           Checking provider eligibility…
         </div>
@@ -137,10 +154,11 @@
         <div class="provider-grid" id="providers" aria-live="polite"></div>
         <div class="footnote">
           <span>↳</span> Reveal coverage describes public availability. Quality
-          describes graded samples. Neither changes what a seller is paid.
+          describes graded samples. Subscription samples are labeled separately
+          and do not change this x402 history or what a seller is paid.
         </div>
         <div class="section-heading history-heading">
-          <h2>Recent signal history</h2>
+          <h2 id="history-title">Recent x402 signal history</h2>
           <a href="#activity">View activity ↗</a>
         </div>
         <div class="table-wrap">

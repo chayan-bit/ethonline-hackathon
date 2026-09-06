@@ -4,8 +4,9 @@ import { hederaTestnet } from 'viem/chains';
 import { readFileSync } from 'node:fs';
 import type { Config } from './config.ts';
 
-export function artifact(name: 'AgentRegistry' | 'SignalLedger') {
-  return JSON.parse(readFileSync(`artifacts/contracts/${name}.sol/${name}.json`, 'utf8')) as { abi: Abi; bytecode: Hex };
+export function artifact(name: 'AgentRegistry' | 'SignalLedger' | 'SubscriptionVault' | 'SubscriptionEscrow' | 'SubscriptionLedger') {
+  const source = name === 'SubscriptionEscrow' ? 'SubscriptionVault' : name;
+  return JSON.parse(readFileSync(`artifacts/contracts/${source}.sol/${name}.json`, 'utf8')) as { abi: Abi; bytecode: Hex };
 }
 export const accountAddress = (id: string): Address => `0x${AccountId.fromString(id).toSolidityAddress()}`;
 export const publicClient = (config: Config) => createPublicClient({ chain: hederaTestnet, transport: http(config.rpcUrl, { timeout: 20000, retryCount: 1 }) });
@@ -19,13 +20,15 @@ export function operatorClient(config: Config) {
   return client;
 }
 
-export async function executeContract(config: Config, address: Address, abi: Abi, name: string, args: readonly unknown[], valueTinybars = 0n) {
+export async function executeContract(config: Config, address: Address, abi: Abi, name: string, args: readonly unknown[],
+  valueTinybars = 0n, maxFeeTinybars?: bigint) {
   const client = operatorClient(config);
   try {
     const data = encodeFunctionData({ abi, functionName: name, args });
     const transaction = new ContractExecuteTransaction().setContractId(ContractId.fromEvmAddress(0, 0, address))
       .setGas(2_000_000).setFunctionParameters(Buffer.from(data.slice(2), 'hex'))
       .setPayableAmount(Hbar.fromTinybars(valueTinybars.toString()));
+    if (maxFeeTinybars !== undefined) transaction.setMaxTransactionFee(Hbar.fromTinybars(maxFeeTinybars.toString()));
     const response = await transaction.execute(client);
     await response.getReceipt(client);
     return { transaction_id: response.transactionId.toString() };

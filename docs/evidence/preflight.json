@@ -9,5 +9,29 @@
   "pyth_fee_tinybars": "1",
   "historical_parse": "InvalidWormholeVaa",
   "oracle_compatible": false,
+  "diagnosis": {
+    "pyth_version": "1.4.3",
+    "pyth_implementation": "0x35a58beee77a2ad547fcded7e8cb1c6e19746b13",
+    "wormhole_receiver": "0xb27e5ca259702f209a29225d0eDdC131039C9933",
+    "wormhole_guardian_set_index": 7,
+    "wormhole_guardian_count": 19,
+    "hermes_guardian_set_index": 1,
+    "hermes_signature_count": 3,
+    "hermes_emitter_chain": 26,
+    "hermes_emitter": "0x507974686e6574507974686e6574507974686e6574507974686e657450797468",
+    "direct_verifier_reason": "guardian set has expired",
+    "stored_eth_usd_publish_time": 1787525955,
+    "stored_eth_usd_publish_time_iso": "2026-08-23T22:59:15.000Z",
+    "root_cause": "The Hedera verifier remains on the legacy 19-guardian Wormhole lineage while authenticated Hermes now returns Pyth Pro 3-of-5 router proofs."
+  },
+  "sources": {
+    "pyth_crosschain_commit": "859113ec53e59a3abaeeb3333ae71ef1fa09615e",
+    "pyth_crosschain_commit_url": "https://github.com/pyth-network/pyth-crosschain/commit/859113ec53e59a3abaeeb3333ae71ef1fa09615e",
+    "pyth_evm_contracts_url": "https://docs.pyth.network/price-feeds/core/contract-addresses/evm",
+    "sources_checked_at": "2026-09-06T01:51:01.000Z",
+    "stable_governance_high_water_sequence": 1030,
+    "stable_governance_high_water_source": "https://api.wormholescan.io/api/v1/vaas/1/6oXTdojyfDS8m5VtTaYB9xRCxpKGSvKJFndLUPV3V3wT",
+    "registry_result": "The official registry retains only the legacy Hedera testnet Pyth contract and stable Wormhole receiver; the current contract table lists no upgraded Hedera testnet address."
+  },
   "scope": "read-only integration preflight"
 }

@@ -8,6 +8,8 @@ import { Gateway, type GatewayEffects } from '../../src/service/gateway.ts';
 import { ETH_USD, SCHEMA, hashSignal, type Signal } from '../../src/protocol/signal.ts';
 
 const now = 10000;
+const legacyLedger = '0x0000000000000000000000000000000000000001' as const;
+const activeLedger = '0x0000000000000000000000000000000000000002' as const;
 const request = { request_id: `0x${'11'.repeat(32)}`, agent_id: '1', price_feed_id: ETH_USD, target_time: now + 350, schema: SCHEMA, buyer: '0.0.1001' };
 const salt = `0x${'22'.repeat(32)}` as const;
 const signal: Signal = { ...request, schema: SCHEMA, request_id: request.request_id as `0x${string}`, issued_at: now, predicted_return_bps: -42, model_version: 'momentum.v1', distribution: 'non-exclusive' };
@@ -16,6 +18,8 @@ const { buyer: _, ...cleanSignal } = signal as Signal & { buyer: string };
 function harness(store = new Store(':memory:')) {
   const calls = { settle: 0, commit: 0, generate: 0 };
   const effects: GatewayEffects = {
+    activeLedgerAddress: activeLedger,
+    legacyLedgerAddress: legacyLedger,
     now: () => now,
     seller: async () => ({ agent_id: '1', payTo: '0.0.1002', price: '100', active: true }),
     feePayer: async () => '0.0.7162784',
@@ -32,6 +36,7 @@ function harness(store = new Store(':memory:')) {
 test('paid workflow persists before settlement and concurrent retries charge once', async () => {
   const h = harness();
   const quote = await h.gateway.quote(request);
+  assert.equal(quote.ledger_address, activeLedger);
   const payment = { x402Version: 2, accepted: quote.requirements, payload: { transaction: 'test-signed-payload' } };
   const originalSettle = h.effects.settle;
   h.effects.settle = async (...args) => {
@@ -44,6 +49,20 @@ test('paid workflow persists before settlement and concurrent retries charge onc
   assert.deepEqual(results[0].prepared, results[1].prepared);
   assert.equal(h.calls.settle, 1);
   assert.equal(h.calls.generate, 1);
+  h.store.close();
+});
+
+test('a pre-upgrade purchase binds to the explicit legacy ledger and never falls through to the active ledger', async () => {
+  const h = harness();
+  const legacyQuote = { request, created_at: now, expires_at: now + 120, requirements: {
+    scheme: 'exact', network: 'hedera:testnet', asset: '0.0.0', amount: '100', payTo: '0.0.1002', maxTimeoutSeconds: 120,
+    extra: { feePayer: '0.0.7162784' },
+  } } as const;
+  h.store.savePurchase({ quote: legacyQuote, status: 'quoted' });
+  const quote = await h.gateway.quote(request);
+  assert.equal(quote.ledger_address, legacyLedger);
+  assert.notEqual(quote.ledger_address, h.effects.activeLedgerAddress);
+  assert.equal(h.store.purchase(request.request_id)?.quote.ledger_address, legacyLedger);
   h.store.close();
 });
 

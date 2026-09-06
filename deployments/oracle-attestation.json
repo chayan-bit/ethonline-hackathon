@@ -1,0 +1,8 @@
+{
+  "status": "compatible",
+  "verified_at": 1788668211,
+  "ledger_address": "0x2B90651860e98e3530bC2B67Aa919922EeD39E2B",
+  "pyth_address": "0x0B38666C2A6E89EB78c53c3098001E8c904a8b63",
+  "manifest_hash": "282c5851e4aee85fc071ab0a4a45e4ea5f86766c16c83d68c4f207e3094c3dab",
+  "proof_sha256": "c6bf2cb6abdbd4eb9d3a47c8688b2808b1dee2b7dadc314e5416abc093c1cc2b"
+}

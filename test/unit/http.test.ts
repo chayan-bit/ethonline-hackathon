@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createApp } from '../../src/service/app.ts';
 import { loadConfig } from '../../src/adapters/config.ts';
 import { Store } from '../../src/service/store.ts';
@@ -10,7 +13,15 @@ import { ETH_USD, SCHEMA, hashSignal, type Signal } from '../../src/protocol/sig
 import type { Purchase } from '../../src/service/gateway.ts';
 
 const requestId = `0x${'11'.repeat(32)}` as const;
-const requirements = { scheme: 'exact', network: 'hedera:testnet', asset: '0.0.0', amount: '100', payTo: '0.0.1002', maxTimeoutSeconds: 120, extra: { feePayer: '0.0.7162784' } } as const;
+const requirements = {
+  scheme: 'exact',
+  network: 'hedera:testnet',
+  asset: '0.0.0',
+  amount: '100',
+  payTo: '0.0.1002',
+  maxTimeoutSeconds: 120,
+  extra: { feePayer: '0.0.7162784' },
+} as const;
 
 function request() {
   return { request_id: requestId, buyer: '0.0.1001', agent_id: '1', price_feed_id: ETH_USD, schema: SCHEMA, target_time: 2_000 };
@@ -21,27 +32,97 @@ function privatePurchase(): Purchase {
   const signal: Signal = { ...signalRequest, schema: SCHEMA, issued_at: 1_000, predicted_return_bps: -42, model_version: 'momentum.v1', distribution: 'non-exclusive' };
   const salt = `0x${'22'.repeat(32)}` as `0x${string}`;
   return {
-    quote: { request: request(), created_at: 1_000, expires_at: 1_120, requirements }, status: 'delivered',
+    quote: { request: request(), created_at: 1_000, expires_at: 1_120, requirements },
+    status: 'delivered',
     prepared: { signal, salt, hash: hashSignal(signal, salt) },
     payment: { x402Version: 2, accepted: requirements, payload: { transaction: 'private-payment' } },
-    payment_ref: '0.0.7162784@10000.000000000', commitment: { transaction_id: '0.0.1002@10001.000000000' },
+    payment_ref: '0.0.7162784@10000.000000000',
+    commitment: { transaction_id: '0.0.1002@10001.000000000' },
   };
 }
 
-async function runningApp() {
+async function runningApp(env: Record<string, string> = {}) {
   const store = new Store(':memory:');
-  const config = loadConfig({ PUBLIC_BASE_URL: 'http://localhost:3000', HEDERA_OPERATOR_ID: '0.0.1001', HEDERA_PAYEE_ID: '0.0.1002' });
+  const config = loadConfig({ PUBLIC_BASE_URL: 'http://localhost:3000', HEDERA_OPERATOR_ID: '0.0.1001', HEDERA_PAYEE_ID: '0.0.1002', ...env });
   const key = PrivateKey.generateECDSA();
-  const auth = new Auth(store, config.baseUrl, async () => key.publicKey, () => 1_000);
-  const app = createApp({ config, store,
-    gateway: { quote: async (input: any) => ({ request: input, created_at: 1000, expires_at: 1120, requirements }), purchase: async () => { throw new Error('should_not_run'); } },
-    seller: async () => ({ active: true }), auth,
+  const auth = new Auth(
+    store,
+    config.baseUrl,
+    async () => key.publicKey,
+    () => 1_000,
+  );
+  const app = createApp({
+    config,
+    store,
+    gateway: {
+      quote: async (input: any) => ({ request: input, created_at: 1000, expires_at: 1120, requirements }),
+      purchase: async () => {
+        throw new Error('should_not_run');
+      },
+    },
+    seller: async () => ({ active: true }),
+    auth,
   });
-  await new Promise<void>(resolve => app.listen(0, '127.0.0.1', resolve));
+  await new Promise<void>((resolve) => app.listen(0, '127.0.0.1', resolve));
   const address = app.address();
   assert.ok(address && typeof address === 'object');
   return { app, store, auth, key, base: `http://127.0.0.1:${address.port}` };
 }
+
+test('health separates current oracle readiness from unavailable legacy records', async () => {
+  const legacyLedger = '0x0000000000000000000000000000000000000001';
+  const activeLedger = '0x0000000000000000000000000000000000000002';
+  const activePyth = '0x0000000000000000000000000000000000000003';
+  const directory = mkdtempSync(join(tmpdir(), 'oracle-attestation-'));
+  const attestationPath = join(directory, 'attestation.json');
+  const verifiedAt = Math.floor(Date.now() / 1000);
+  writeFileSync(
+    attestationPath,
+    JSON.stringify({
+      status: 'compatible',
+      verified_at: verifiedAt,
+      ledger_address: activeLedger,
+      pyth_address: activePyth,
+      manifest_hash: 'aa'.repeat(32),
+      proof_sha256: 'bb'.repeat(32),
+    }),
+  );
+  const h = await runningApp({
+    LEGACY_LEDGER_ADDRESS: legacyLedger,
+    ACTIVE_LEDGER_ADDRESS: activeLedger,
+    ORACLE_ATTESTATION_PATH: attestationPath,
+    LEDGER_COHORTS_JSON: JSON.stringify([
+      { address: legacyLedger, deployment_block: 1, pyth_address: '0x0000000000000000000000000000000000000004' },
+      { address: activeLedger, deployment_block: 2, pyth_address: activePyth },
+    ]),
+  });
+  const apiNow = Math.floor(Date.now() / 1000);
+  h.store.put('indexer', `status/${activeLedger}`, { indexed_through: apiNow, synced_at: apiNow, error: null });
+  h.store.put('samples', requestId, { request_id: requestId, ledger_address: legacyLedger, oracle_status: 'unavailable' });
+  try {
+    const health = (await (await fetch(`${h.base}/health`)).json()) as any;
+    assert.deepEqual(health.readiness.oracle.current, {
+      ledger_address: activeLedger,
+      pyth_address: activePyth,
+      status: 'compatible',
+      attestation: { verified_at: verifiedAt, manifest_hash: 'aa'.repeat(32), proof_sha256: 'bb'.repeat(32) },
+    });
+    assert.deepEqual(health.readiness.oracle.legacy, { records: 1, status: 'unavailable' });
+    assert.equal(health.readiness.ready, true);
+    h.store.put('indexer', 'status', { indexed_through: apiNow - 1, synced_at: apiNow, error: 'legacy_cohort_unavailable' });
+    const unhealthy = (await (await fetch(`${h.base}/health`)).json()) as any;
+    assert.equal(unhealthy.readiness.ready, false);
+    assert.equal(unhealthy.readiness.indexer.status, 'error');
+    assert.equal(unhealthy.indexer.error, 'legacy_cohort_unavailable');
+    const discovery = (await (await fetch(`${h.base}/v1/agents`)).json()) as any;
+    assert.equal(discovery.agents[0].metrics.is_stale, true);
+    assert.equal(discovery.agents[0].metrics.indexer_error, 'legacy_cohort_unavailable');
+  } finally {
+    await new Promise<void>((resolve, reject) => h.app.close((error) => (error ? reject(error) : resolve())));
+    h.store.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
 
 function proofHeader(auth: Auth, key: InstanceType<typeof PrivateKey>, scope: Parameters<Auth['issue']>[0]) {
   const challenge = auth.issue(scope);
@@ -51,11 +132,24 @@ function proofHeader(auth: Auth, key: InstanceType<typeof PrivateKey>, scope: Pa
 test('HTTP boundary returns real 402 shape and denies unauthenticated paid recovery', async () => {
   const store = new Store(':memory:');
   const config = loadConfig({ PUBLIC_BASE_URL: 'http://localhost:3000', HEDERA_OPERATOR_ID: '0.0.1001', HEDERA_PAYEE_ID: '0.0.1002' });
-  const app = createApp({ config, store,
-    gateway: { quote: async (request: any) => ({ request, created_at: 1000, expires_at: 1120, requirements: { scheme: 'exact', network: 'hedera:testnet', asset: '0.0.0', amount: '100', payTo: '0.0.1002', maxTimeoutSeconds: 120, extra: { feePayer: '0.0.7162784' } } }), purchase: async () => { throw new Error('should_not_run'); } },
-    seller: async () => ({ active: true }), auth: new Auth(store, config.baseUrl, async () => PrivateKey.generateECDSA().publicKey),
+  const app = createApp({
+    config,
+    store,
+    gateway: {
+      quote: async (request: any) => ({
+        request,
+        created_at: 1000,
+        expires_at: 1120,
+        requirements: { scheme: 'exact', network: 'hedera:testnet', asset: '0.0.0', amount: '100', payTo: '0.0.1002', maxTimeoutSeconds: 120, extra: { feePayer: '0.0.7162784' } },
+      }),
+      purchase: async () => {
+        throw new Error('should_not_run');
+      },
+    },
+    seller: async () => ({ active: true }),
+    auth: new Auth(store, config.baseUrl, async () => PrivateKey.generateECDSA().publicKey),
   });
-  await new Promise<void>(resolve => app.listen(0, '127.0.0.1', resolve));
+  await new Promise<void>((resolve) => app.listen(0, '127.0.0.1', resolve));
   const address = app.address();
   assert.ok(address && typeof address === 'object');
   const base = `http://127.0.0.1:${address.port}`;
@@ -65,11 +159,11 @@ test('HTTP boundary returns real 402 shape and denies unauthenticated paid recov
     assert.equal(JSON.parse(Buffer.from(response.headers.get('payment-required')!, 'base64').toString()).x402Version, 2);
     assert.equal((await fetch(`${base}/v1/purchases/${requestId}`)).status, 401);
     assert.equal((await fetch(`${base}/.env`)).status, 404);
-    const discovery = await (await fetch(`${base}/v1/agents`)).json() as any;
+    const discovery = (await (await fetch(`${base}/v1/agents`)).json()) as any;
     assert.equal(discovery.agents[0].metrics.reveal_pct, null);
     assert.equal(discovery.agents[0].metrics.is_stale, true);
   } finally {
-    await new Promise<void>((resolve, reject) => app.close(error => error ? reject(error) : resolve()));
+    await new Promise<void>((resolve, reject) => app.close((error) => (error ? reject(error) : resolve())));
     store.close();
   }
 });
@@ -90,7 +184,7 @@ test('HTTP rejects malformed bodies and refuses file probing outside the static 
       assert.equal((await fetch(`${h.base}${path}`)).status, 404, path);
     }
   } finally {
-    await new Promise<void>((resolve, reject) => h.app.close(error => error ? reject(error) : resolve()));
+    await new Promise<void>((resolve, reject) => h.app.close((error) => (error ? reject(error) : resolve())));
     h.store.close();
   }
 });
@@ -100,32 +194,45 @@ test('public API exposes encoding policy, readiness, bounded pagination, cohort,
   const apiNow = Math.floor(Date.now() / 1000);
   h.store.put('indexer', 'status', { indexed_through: apiNow - 1, synced_at: apiNow, error: null });
   h.store.put('samples', requestId, {
-    request_id: requestId, agent_id: '1', schema: SCHEMA, price_feed_id: ETH_USD, payment_mode: 'x402', payment_status: 'verified',
-    payment_verified_at: apiNow - 1_000, payer: '0.0.1001', committed_at: apiNow - 1_000, target_time: apiNow - 500, revealed_at: apiNow - 400,
-    grade: null, oracle_status: 'unavailable', oracle_status_at: apiNow - 400, native_payment_id: '0.0.7162784@900.000000001',
-    transaction_hash: `0x${'33'.repeat(48)}`, commitment_hash: `0x${'44'.repeat(32)}`,
+    request_id: requestId,
+    agent_id: '1',
+    schema: SCHEMA,
+    price_feed_id: ETH_USD,
+    payment_mode: 'x402',
+    payment_status: 'verified',
+    payment_verified_at: apiNow - 1_000,
+    payer: '0.0.1001',
+    committed_at: apiNow - 1_000,
+    target_time: apiNow - 500,
+    revealed_at: apiNow - 400,
+    grade: null,
+    oracle_status: 'unavailable',
+    oracle_status_at: apiNow - 400,
+    native_payment_id: '0.0.7162784@900.000000001',
+    transaction_hash: `0x${'33'.repeat(48)}`,
+    commitment_hash: `0x${'44'.repeat(32)}`,
   });
   try {
-    const schema = await (await fetch(`${h.base}/v1/schema/${SCHEMA}`)).json() as any;
+    const schema = (await (await fetch(`${h.base}/v1/schema/${SCHEMA}`)).json()) as any;
     assert.equal(schema.encoding.version, '1');
     assert.equal(schema.encoding.function, 'keccak256(abi.encode)');
     assert.equal(schema.policy.reveal_grace_seconds, 300);
 
-    const health = await (await fetch(`${h.base}/health`)).json() as any;
+    const health = (await (await fetch(`${h.base}/health`)).json()) as any;
     assert.equal(health.liveness.status, 'ok');
     assert.equal(health.readiness.scope, 'purchase_and_evidence_service');
     assert.equal(typeof health.readiness.ready, 'boolean');
     assert.equal(health.readiness.indexer.status, 'ready');
 
-    const discovery = await (await fetch(`${h.base}/v1/agents?offset=0&limit=1&allow_unproven=true`)).json() as any;
+    const discovery = (await (await fetch(`${h.base}/v1/agents?offset=0&limit=1&allow_unproven=true`)).json()) as any;
     assert.equal(discovery.agents[0].payTo, '0.0.1002');
     assert.equal(discovery.pagination.total, 1);
     assert.equal(discovery.pagination.next_offset, null);
     const invalidPage = await fetch(`${h.base}/v1/agents?limit=0`);
     assert.equal(invalidPage.status, 400);
-    assert.equal((await invalidPage.json() as any).retry, 'correct_request');
+    assert.equal(((await invalidPage.json()) as any).retry, 'correct_request');
 
-    const history = await (await fetch(`${h.base}/v1/agents/1/signals?offset=0&limit=1`)).json() as any;
+    const history = (await (await fetch(`${h.base}/v1/agents/1/signals?offset=0&limit=1`)).json()) as any;
     assert.equal(history.samples[0].cohort_membership, 'eligible');
     assert.match(history.samples[0].evidence_links.payment, /hashscan\.io\/testnet\/transaction/);
     assert.match(history.samples[0].evidence_links.commitment, /hashscan\.io\/testnet\/transaction/);
@@ -134,13 +241,12 @@ test('public API exposes encoding policy, readiness, bounded pagination, cohort,
     let limited: Response | undefined;
     for (let attempt = 0; attempt < 121 && limited?.status !== 429; attempt++) limited = await fetch(`${h.base}/health`);
     assert.equal(limited?.status, 429);
-    assert.equal((await limited!.json() as any).retry, 'retry_same_request');
+    assert.equal(((await limited!.json()) as any).retry, 'retry_same_request');
   } finally {
-    await new Promise<void>((resolve, reject) => h.app.close(error => error ? reject(error) : resolve()));
+    await new Promise<void>((resolve, reject) => h.app.close((error) => (error ? reject(error) : resolve())));
     h.store.close();
   }
 });
-
 
 test('private purchase recovery reveals the prepared payload only with a bound, single-use wallet proof', async () => {
   const h = await runningApp();
@@ -156,7 +262,7 @@ test('private purchase recovery reveals the prepared payload only with a bound, 
     const proof = proofHeader(h.auth, h.key, scope);
     const recovered = await fetch(`${h.base}${path}`, { headers: { 'x-wallet-proof': proof } });
     assert.equal(recovered.status, 200);
-    const recoveredBody = await recovered.json() as any;
+    const recoveredBody = (await recovered.json()) as any;
     assert.equal(recoveredBody.prepared.salt, purchase.prepared!.salt);
     assert.equal(recoveredBody.payment.payload.transaction, 'private-payment');
     assert.equal((await fetch(`${h.base}${path}`, { headers: { 'x-wallet-proof': proof } })).status, 401);
@@ -168,7 +274,7 @@ test('private purchase recovery reveals the prepared payload only with a bound, 
     const activity = await (await fetch(`${h.base}/v1/activity`)).text();
     assert.doesNotMatch(activity, /private-payment|momentum\.v1|0x2222/);
   } finally {
-    await new Promise<void>((resolve, reject) => h.app.close(error => error ? reject(error) : resolve()));
+    await new Promise<void>((resolve, reject) => h.app.close((error) => (error ? reject(error) : resolve())));
     h.store.close();
   }
 });

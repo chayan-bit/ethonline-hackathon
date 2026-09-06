@@ -1,5 +1,5 @@
 import { keccak256, stringToHex, zeroHash, type Address, type Hex } from 'viem';
-import type { Config } from './config.ts';
+import type { Config, LedgerCohort } from './config.ts';
 import { accountAddress, artifact, executeContract, publicClient } from './hedera.ts';
 import { normalizeTransactionId, paymentReference } from './payment.ts';
 import { assertCommitTiming, SCHEMA_ID, type Signal } from '../protocol/signal.ts';
@@ -16,8 +16,13 @@ export function signalTuple(s: Signal) {
 export class Ledger {
   readonly abi = artifact('SignalLedger').abi;
   private readonly client;
-  constructor(private readonly config: Config, private readonly store: Store) { this.client = publicClient(config); }
-  get address(): Address { if (!this.config.ledgerAddress) throw new Error('ledger_not_deployed'); return this.config.ledgerAddress; }
+  constructor(private readonly config: Config, private readonly store: Store, private readonly cohort?: LedgerCohort) { this.client = publicClient(config); }
+  get address(): Address {
+    const address = this.cohort?.address ?? this.config.ledgerAddress;
+    if (!address) throw new Error('ledger_not_deployed');
+    return address;
+  }
+  get pythAddress(): Address { return this.cohort?.pythAddress ?? this.config.pythAddress; }
 
   async seller() {
     if (!this.config.registryAddress || !this.config.payeeId) throw new Error('registry_not_configured');
@@ -66,5 +71,30 @@ export class Ledger {
 
   async grade(id: string, issue: Hex[], target: Hex[], feeTinybars: bigint) {
     return executeContract(this.config, this.address, this.abi, 'grade', [id, issue, target], feeTinybars);
+  }
+}
+
+export class LedgerRouter {
+  private readonly ledgers: ReadonlyMap<string, Ledger>;
+
+  constructor(private readonly config: Config, store: Store) {
+    this.ledgers = new Map(config.ledgerCohorts.map(cohort => [cohort.address.toLowerCase(), new Ledger(config, store, cohort)]));
+  }
+
+  get active(): Ledger {
+    if (!this.config.ledgerAddress) throw new Error('ledger_not_deployed');
+    return this.require(this.config.ledgerAddress);
+  }
+
+  forQuote(quote: Pick<Quote, 'ledger_address'>): Ledger {
+    const address = quote.ledger_address ?? this.config.legacyLedgerAddress;
+    if (!address) throw new Error('legacy_ledger_unbound');
+    return this.require(address);
+  }
+
+  private require(address: Address): Ledger {
+    const ledger = this.ledgers.get(address.toLowerCase());
+    if (!ledger) throw new Error('unknown_ledger_cohort');
+    return ledger;
   }
 }

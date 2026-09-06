@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import {IPyth} from "@pythnetwork/pyth-sdk-solidity/IPyth.sol";
-import {PythStructs} from "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
+import {OracleGradeEngine} from "./OracleGradeEngine.sol";
 
 interface IAgentRegistry {
     function getAgent(uint256 agentId)
@@ -25,24 +24,16 @@ interface IAgentRegistry {
 
 /// @notice Immutable commitment, permissionless reveal, and oracle-backed grade evidence.
 /// @dev This contract never transfers a seller, buyer, revealer, or grader reward.
-contract SignalLedger {
+contract SignalLedger is OracleGradeEngine {
     uint8 public constant DISTRIBUTION_NON_EXCLUSIVE = 1;
     uint8 public constant PAYMENT_MODE_X402 = 1;
     bytes32 public constant HBAR_ASSET_ID = bytes32(0);
     bytes32 public constant HEDERA_TESTNET_NETWORK_ID = keccak256("hedera:testnet");
-    uint256 public constant MAX_SAFE_RETURN_BPS = 9_007_199_254_740_991;
-    int32 public constant MAX_SUPPORTED_EXPO = 18;
-
     IAgentRegistry public immutable registry;
-    IPyth public immutable pyth;
     bytes32 public immutable schemaId;
-    bytes32 public immutable allowedPriceFeedId;
     uint64 public immutable minTargetLead;
     uint64 public immutable maxTargetLead;
     uint64 public immutable issuanceTolerance;
-    uint64 public immutable oracleWindow;
-    uint16 public immutable maxConfidenceBps;
-    uint16 public immutable neutralBandBps;
 
     struct SignalPayload {
         bytes32 schemaId;
@@ -82,13 +73,6 @@ contract SignalLedger {
         uint64 revealedAt;
     }
 
-    struct Observation {
-        int64 price;
-        uint64 conf;
-        int32 expo;
-        uint64 publishTime;
-    }
-
     struct GradeRecord {
         bool graded;
         bool oracleExcluded;
@@ -106,7 +90,6 @@ contract SignalLedger {
     mapping(bytes32 => RevealRecord) private reveals;
     mapping(bytes32 => GradeRecord) private grades;
 
-    error InvalidConfig();
     error InvalidRequestId();
     error InvalidSignalHash();
     error UnknownCommitment(bytes32 requestId);
@@ -126,9 +109,6 @@ contract SignalLedger {
     error InvalidIssuanceTime(uint64 issuedAt, uint64 committedAt);
     error NotRevealed(bytes32 requestId);
     error AlreadyFinalized(bytes32 requestId);
-    error InsufficientOracleFee(uint256 required, uint256 supplied);
-    error OracleDataMissing();
-    error ArithmeticOutOfRange();
 
     event SignalCommitted(
         bytes32 indexed requestId,
@@ -186,28 +166,18 @@ contract SignalLedger {
         uint64 oracleWindow_,
         uint16 maxConfidenceBps_,
         uint16 neutralBandBps_
-    ) {
+    ) OracleGradeEngine(pyth_, allowedPriceFeedId_, oracleWindow_, maxConfidenceBps_, neutralBandBps_) {
         if (
             registry_ == address(0) ||
-            pyth_ == address(0) ||
             schemaId_ == bytes32(0) ||
-            allowedPriceFeedId_ == bytes32(0) ||
             minTargetLead_ == 0 ||
-            maxTargetLead_ < minTargetLead_ ||
-            oracleWindow_ == 0 ||
-            maxConfidenceBps_ > 10_000 ||
-            neutralBandBps_ > 10_000
+            maxTargetLead_ < minTargetLead_
         ) revert InvalidConfig();
         registry = IAgentRegistry(registry_);
-        pyth = IPyth(pyth_);
         schemaId = schemaId_;
-        allowedPriceFeedId = allowedPriceFeedId_;
         minTargetLead = minTargetLead_;
         maxTargetLead = maxTargetLead_;
         issuanceTolerance = issuanceTolerance_;
-        oracleWindow = oracleWindow_;
-        maxConfidenceBps = maxConfidenceBps_;
-        neutralBandBps = neutralBandBps_;
     }
 
     function commit(
@@ -332,42 +302,13 @@ contract SignalLedger {
         if (!commitment.revealed) revert NotRevealed(requestId);
         GradeRecord storage gradeRecord = grades[requestId];
         if (gradeRecord.graded || gradeRecord.oracleExcluded) revert AlreadyFinalized(requestId);
-        if (issueUpdate.length == 0 || targetUpdate.length == 0) revert OracleDataMissing();
-
-        uint256 issueFee = pyth.getUpdateFee(issueUpdate);
-        uint256 targetFee = pyth.getUpdateFee(targetUpdate);
-        uint256 requiredFee = issueFee + targetFee;
-        if (msg.value < requiredFee) revert InsufficientOracleFee(requiredFee, msg.value);
-
         uint64 issueMin = commitment.committedAt;
-        uint64 issueMax = issueMin + oracleWindow;
         uint64 targetMin = commitment.targetTime;
-        uint64 targetMax = targetMin + oracleWindow;
-        bytes32[] memory feedIds = new bytes32[](1);
-        feedIds[0] = commitment.priceFeedId;
-
-        PythStructs.PriceFeed[] memory issueFeeds = pyth.parsePriceFeedUpdatesUnique{value: issueFee}(
-            issueUpdate,
-            feedIds,
-            issueMin,
-            issueMax
-        );
-        PythStructs.PriceFeed[] memory targetFeeds = pyth.parsePriceFeedUpdatesUnique{value: targetFee}(
-            targetUpdate,
-            feedIds,
-            targetMin,
-            targetMax
-        );
-        if (issueFeeds.length != 1 || targetFeeds.length != 1 || issueFeeds[0].id != commitment.priceFeedId || targetFeeds[0].id != commitment.priceFeedId) {
-            revert OracleDataMissing();
-        }
-
-        Observation memory issue = _observation(issueFeeds[0].price);
-        Observation memory target = _observation(targetFeeds[0].price);
-        if (!_validObservation(issue) || !_validObservation(target)) {
-            _exclude(requestId, commitment, gradeRecord, issue, target, 1);
-        } else if (!_withinConfidence(issue) || !_withinConfidence(target)) {
-            _exclude(requestId, commitment, gradeRecord, issue, target, 2);
+        (Observation memory issue, Observation memory target, uint256 requiredFee) =
+            _parseObservations(issueUpdate, targetUpdate, issueMin, targetMin);
+        uint8 exclusionReason = _exclusionReason(issue, target);
+        if (exclusionReason != 0) {
+            _exclude(requestId, commitment, gradeRecord, issue, target, exclusionReason);
         } else {
             (int256 actualReturnBps, uint256 absoluteErrorBps, bool directionCorrect) = _calculateGrade(
                 reveals[requestId].signal.predictedReturnBps,
@@ -515,68 +456,6 @@ contract SignalLedger {
         gradeRecord.target = target;
         gradeRecord.finalizedAt = uint64(block.timestamp);
         emit SignalOracleExcluded(requestId, commitment.agentId, gradeRecord.finalizedAt, reason, issue, target);
-    }
-
-    function _observation(PythStructs.Price memory price) private pure returns (Observation memory) {
-        if (price.publishTime > type(uint64).max || price.expo < -MAX_SUPPORTED_EXPO || price.expo > MAX_SUPPORTED_EXPO) {
-            revert ArithmeticOutOfRange();
-        }
-        return Observation({price: price.price, conf: price.conf, expo: price.expo, publishTime: uint64(price.publishTime)});
-    }
-
-    function _validObservation(Observation memory observation) private pure returns (bool) {
-        return observation.price > 0;
-    }
-
-    function _withinConfidence(Observation memory observation) private view returns (bool) {
-        return uint256(observation.conf) * 10_000 <= uint256(uint64(observation.price)) * maxConfidenceBps;
-    }
-
-    function _calculateGrade(int32 predictedReturnBps, Observation memory issue, Observation memory target)
-        private
-        view
-        returns (int256 actualReturnBps, uint256 absoluteErrorBps, bool directionCorrect)
-    {
-        (uint256 base, uint256 quote) = _normalize(issue.price, issue.expo, target.price, target.expo);
-        int256 delta;
-        if (quote >= base) {
-            uint256 increase = quote - base;
-            if (increase > uint256(type(int256).max) / 10_000) revert ArithmeticOutOfRange();
-            delta = int256(increase * 10_000 / base);
-        } else {
-            uint256 decrease = base - quote;
-            if (decrease > uint256(type(int256).max) / 10_000) revert ArithmeticOutOfRange();
-            delta = -int256(decrease * 10_000 / base);
-        }
-        if (delta > int256(MAX_SAFE_RETURN_BPS) || delta < -int256(MAX_SAFE_RETURN_BPS)) revert ArithmeticOutOfRange();
-        actualReturnBps = delta;
-        int256 difference = actualReturnBps - int256(predictedReturnBps);
-        absoluteErrorBps = uint256(difference < 0 ? -difference : difference);
-        if (absoluteErrorBps > MAX_SAFE_RETURN_BPS) revert ArithmeticOutOfRange();
-        directionCorrect = _direction(actualReturnBps) == _direction(int256(predictedReturnBps));
-    }
-
-    function _normalize(int64 p0, int32 e0, int64 p1, int32 e1) private pure returns (uint256 base, uint256 quote) {
-        uint256 first = uint256(uint64(p0));
-        uint256 second = uint256(uint64(p1));
-        if (e0 == e1) return (first, second);
-        int256 exponentDelta = int256(e1) - int256(e0);
-        uint256 magnitude = uint256(exponentDelta < 0 ? -exponentDelta : exponentDelta);
-        if (magnitude > 77) revert ArithmeticOutOfRange();
-        uint256 scale = 10 ** magnitude;
-        if (exponentDelta > 0) {
-            if (second > type(uint256).max / scale) revert ArithmeticOutOfRange();
-            return (first, second * scale);
-        }
-        if (first > type(uint256).max / scale) revert ArithmeticOutOfRange();
-        return (first * scale, second);
-    }
-
-    function _direction(int256 value) private view returns (int8) {
-        int256 neutralBand = int256(uint256(neutralBandBps));
-        if (value < -neutralBand) return -1;
-        if (value > neutralBand) return 1;
-        return 0;
     }
 
     function _within(uint64 value, uint64 expected, uint64 tolerance) private pure returns (bool) {

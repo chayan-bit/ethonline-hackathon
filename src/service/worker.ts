@@ -3,7 +3,7 @@ import { keccak256, stringToHex } from 'viem';
 import type { Config } from '../adapters/config.ts';
 import { operatorClient, publicClient } from '../adapters/hedera.ts';
 import { historicalPrice, pythAbi } from '../adapters/pyth.ts';
-import { Ledger } from '../adapters/ledger.ts';
+import { Ledger, LedgerRouter } from '../adapters/ledger.ts';
 import { POLICY } from '../protocol/signal.ts';
 import type { Store } from './store.ts';
 import type { Gateway, Purchase } from './gateway.ts';
@@ -12,7 +12,7 @@ import type { SampleEvidence } from './indexer.ts';
 type JobState = { attempts: number; next_attempt: number; status: string; transaction_id?: string };
 export class Worker {
   private running = false;
-  constructor(private readonly config: Config, private readonly store: Store, private readonly ledger: Ledger, private readonly gateway: Gateway) {}
+  constructor(private readonly config: Config, private readonly store: Store, private readonly ledgers: LedgerRouter, private readonly gateway: Gateway) {}
 
   async tick(): Promise<void> {
     if (this.running || !this.config.workerEnabled) return;
@@ -20,6 +20,7 @@ export class Worker {
     try {
       for (const p of this.store.purchases()) {
         const id = p.quote.request.request_id;
+        const now = Math.floor(Date.now() / 1000);
         if (p.payment && ['settlement_pending', 'paid', 'commit_pending'].includes(p.status)) {
           await this.attempt(`recover/${id}`, async () => {
             const result = await this.gateway.purchase(id, p.payment!);
@@ -27,10 +28,13 @@ export class Worker {
           });
         }
         if (p.status !== 'delivered') continue;
+        const ledger = this.ledgers.forQuote(p.quote);
         await this.attempt(`audit/${id}`, () => this.audit(p));
-        if (p.prepared && Math.floor(Date.now() / 1000) >= p.quote.request.target_time) {
-          await this.attempt(`reveal/${id}`, () => this.ledger.reveal(p.prepared!));
-          await this.attempt(`grade/${id}`, () => this.grade(p));
+        if (p.prepared && now >= p.quote.request.target_time) {
+          await this.attempt(`reveal/${id}`, () => ledger.reveal(p.prepared!));
+          if (now >= p.quote.request.target_time + POLICY.oracleWindow) {
+            await this.attempt(`grade/${id}`, () => this.grade(p, ledger));
+          }
         }
       }
     } finally { this.running = false; }
@@ -60,7 +64,8 @@ export class Worker {
     const message = {
       version: 1, event_type: 'signal.committed', event_id: keccak256(stringToHex(p.quote.request.request_id)),
       request_id: p.quote.request.request_id, agent_id: p.quote.request.agent_id, payment_mode: 'x402', payment_ref: p.payment_ref,
-      ledger_transaction_id: p.commitment?.transaction_id, commitment_hash: p.prepared?.hash, schema: p.quote.request.schema, target_time: p.quote.request.target_time,
+      ledger_address: p.quote.ledger_address ?? this.config.legacyLedgerAddress, ledger_transaction_id: p.commitment?.transaction_id,
+      commitment_hash: p.prepared?.hash, schema: p.quote.request.schema, target_time: p.quote.request.target_time,
     };
     const client = operatorClient(this.config);
     try {
@@ -70,17 +75,17 @@ export class Worker {
     } finally { client.close(); }
   }
 
-  private async grade(p: Purchase) {
-    const commitment = await this.ledger.commitment(p.quote.request.request_id);
+  private async grade(p: Purchase, ledger: Ledger) {
+    const commitment = await ledger.commitment(p.quote.request.request_id);
     if (!commitment.revealed) throw new Error('not_revealed');
     const [issue, target] = await Promise.all([historicalPrice(this.config, commitment.committed_at), historicalPrice(this.config, commitment.target_time)]);
     const client = publicClient(this.config);
-    const fees = await Promise.all([issue, target].map(u => client.readContract({ address: this.config.pythAddress, abi: pythAbi, functionName: 'getUpdateFee', args: [u.updates] })));
+    const fees = await Promise.all([issue, target].map(u => client.readContract({ address: ledger.pythAddress, abi: pythAbi, functionName: 'getUpdateFee', args: [u.updates] })));
     const fee = fees[0] + fees[1];
     // Authenticate in a read-only simulation before spending operating HBAR on a known-invalid oracle payload.
-    await client.simulateContract({ address: this.ledger.address, abi: this.ledger.abi, functionName: 'grade',
+    await client.simulateContract({ address: ledger.address, abi: ledger.abi, functionName: 'grade',
       args: [p.quote.request.request_id, issue.updates, target.updates], value: fee * 10_000_000_000n });
     if (issue.publishTime > commitment.committed_at + POLICY.oracleWindow || target.publishTime > commitment.target_time + POLICY.oracleWindow) throw new Error('oracle_window');
-    return this.ledger.grade(p.quote.request.request_id, issue.updates, target.updates, fee);
+    return ledger.grade(p.quote.request.request_id, issue.updates, target.updates, fee);
   }
 }
