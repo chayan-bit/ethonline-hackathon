@@ -1,0 +1,47 @@
+{
+  "name": "verifiable-signal-market",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "test": "node --import tsx --test test/unit/*.test.ts",
+    "test:contracts": "hardhat test",
+    "typecheck": "tsc --noEmit",
+    "compile": "hardhat compile",
+    "check": "npm run typecheck && npm test && npm run test:contracts",
+    "start": "node --env-file=.env --import tsx src/server.ts",
+    "buyer": "node --env-file=.env --import tsx src/buyer.ts",
+    "deploy": "node --env-file=.env --import tsx scripts/deploy.ts",
+    "preflight": "node --env-file=.env --import tsx scripts/preflight.ts",
+    "test:coverage": "c8 --all --include=src/protocol/**/*.ts --include=src/service/**/*.ts --check-coverage --statements=80 --lines=80 npm test"
+  },
+  "dependencies": {
+    "@hiero-ledger/sdk": "2.85.0",
+    "@pythnetwork/pyth-sdk-solidity": "4.3.1",
+    "@x402/core": "2.25.0",
+    "@x402/hedera": "2.25.0",
+    "ajv": "8.20.0",
+    "viem": "2.56.3"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox-viem": "5.0.7",
+    "@types/node": "22.20.1",
+    "c8": "12.0.0",
+    "hardhat": "3.15.0",
+    "prettier": "3.6.2",
+    "tsx": "4.23.13",
+    "typescript": "5.9.3"
+  },
+  "overrides": {
+    "@hiero-ledger/sdk": {
+      "@grpc/grpc-js": "1.12.7",
+      "protobufjs": "8.6.6"
+    },
+    "protobufjs": "8.6.6",
+    "ws": "8.21.3",
+    "@hiero-ledger/cryptography": "1.21.0"
+  }
+}

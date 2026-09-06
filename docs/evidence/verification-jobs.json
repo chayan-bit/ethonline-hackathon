@@ -1,0 +1,18 @@
+[
+  {
+    "contract": "AgentRegistry",
+    "address": "0x00000000000000000000000000000000009e74b9",
+    "http_status": 202,
+    "result": {
+      "verificationId": "c6a3ac43-83ea-40df-967d-ee365b3c3786"
+    }
+  },
+  {
+    "contract": "SignalLedger",
+    "address": "0x00000000000000000000000000000000009e753c",
+    "http_status": 202,
+    "result": {
+      "verificationId": "76a986fd-7f6a-4097-b481-d4f5ca3168b4"
+    }
+  }
+]

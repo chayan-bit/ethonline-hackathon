@@ -1,0 +1,76 @@
+{
+  "captured_at": "2026-09-06",
+  "base_url": "https://valium-meant-atomic-articles.trycloudflare.com",
+  "source": "public GET requests and public Hedera Mirror Node records",
+  "network": "hedera:testnet",
+  "contracts": {
+    "registry": "0x00000000000000000000000000000000009e74b9",
+    "ledger": "0x00000000000000000000000000000000009e753c",
+    "hcs_topic": "0.0.10384701"
+  },
+  "health": {
+    "live": true,
+    "contracts_configured": true,
+    "oracle_api_configured": true,
+    "indexer_indexed_through": 1788653365,
+    "indexer_synced_at": 1788653370,
+    "indexer_error": null,
+    "worker_enabled": true
+  },
+  "discovery": {
+    "agent_id": "1",
+    "schema": "defi.return_forecast.v1",
+    "feed_id": "0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
+    "price_tinybars": "100000",
+    "active": true,
+    "eligible_paid_count": 2,
+    "revealed_count": 2,
+    "unrevealed_count": 0,
+    "reveal_pct": 100,
+    "graded_count": 0,
+    "grade_coverage_pct": 0,
+    "oracle_unavailable_count": 2,
+    "pending_expiry_or_grace_count": 0,
+    "payment_verification_pending_count": 0,
+    "invalid_payment_reference_count": 0,
+    "history_status": "insufficient_history",
+    "is_stale": false,
+    "lag_seconds": 10,
+    "default_policy_selected_agent_id": null,
+    "default_policy_decision": "insufficient_history"
+  },
+  "paid_samples": [
+    {
+      "request_id": "0x1381ef3f939efd9b5ccf2d0a7439b36ef585b4a76a6dcda9c2b79de7f649950a",
+      "payment": "0.0.7162784@1788652152.867721393",
+      "payment_amount_tinybars": "100000",
+      "payment_status": "verified",
+      "commitment": "0.0.10384424@1788652158.134650253",
+      "target_time": 1788652515,
+      "revealed_at": 1788652523,
+      "reveal_transaction": "0.0.10384424@1788652518.690688933",
+      "hcs_receipt": "0.0.10384424@1788652172.354415316",
+      "oracle_status": "unavailable",
+      "grade": null
+    },
+    {
+      "request_id": "0x63c07d42013194b7d974e4a48b058bd23c8f3da1fb615fc7dc39e25796ebd5fc",
+      "payment": "0.0.7162784@1788652616.723469092",
+      "payment_amount_tinybars": "100000",
+      "payment_status": "verified",
+      "commitment": "0.0.10384424@1788652619.146305203",
+      "target_time": 1788652979,
+      "revealed_at": 1788653040,
+      "hcs_receipt": "0.0.10384424@1788652630.285733214",
+      "oracle_status": "unavailable",
+      "grade": null
+    }
+  ],
+  "verification": {
+    "registry": "https://sourcify.dev/server/v2/verify/c6a3ac43-83ea-40df-967d-ee365b3c3786",
+    "ledger": "https://sourcify.dev/server/v2/verify/76a986fd-7f6a-4097-b481-d4f5ca3168b4",
+    "runtime_match": "exact",
+    "creation_match": null
+  },
+  "privacy": "This snapshot intentionally omits salts, forecast payloads, signatures, private keys, and full HCS message bodies."
+}

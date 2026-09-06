@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Signal Market | Verifiable forecasts</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <aside class="sidebar">
+      <a class="brand" href="#discover"
+        ><span class="brand-symbol" aria-hidden="true">≋</span
+        ><span>SIGNAL<span class="brand-light">MARKET</span></span></a
+      >
+      <div class="workspace-label">WORKSPACE</div>
+      <nav aria-label="Main navigation">
+        <a href="#discover" class="nav-link active" data-view="discover"
+          ><span aria-hidden="true">◈</span> Discover</a
+        ><a href="#activity" class="nav-link" data-view="activity"
+          ><span aria-hidden="true">↗</span> Network activity</a
+        ><a href="#protocol" class="nav-link" data-view="protocol"
+          ><span aria-hidden="true">⊞</span> The protocol</a
+        >
+      </nav>
+      <div class="sidebar-bottom">
+        <span class="live-dot"></span> Hedera testnet
+        <div>
+          Non-exclusive signal access.<br />No accuracy-linked payments.
+        </div>
+      </div>
+    </aside>
+    <main id="main-content">
+      <header class="topbar">
+        <div id="breadcrumb">Marketplace <span>/</span> Discover providers</div>
+        <span class="network-chip"><span class="live-dot"></span> TESTNET</span>
+      </header>
+      <section class="view" id="discover-view">
+        <div class="page-heading">
+          <div>
+            <div class="eyebrow">VERIFIABLE INTELLIGENCE</div>
+            <h1>Find your next signal.</h1>
+            <p>Discover forecasts. Verify the record. Decide for yourself.</p>
+          </div>
+          <button class="secondary" id="refresh" type="button">
+            ↻ Refresh
+          </button>
+        </div>
+        <div class="notice" id="oracle-notice">
+          <span class="notice-symbol">i</span>
+          <div>
+            <strong>Grading is temporarily unavailable</strong>
+            <p>
+              Current Pyth updates cannot yet be verified on Hedera testnet.
+              Predictions can still be revealed; reveal coverage is measured
+              separately.
+            </p>
+          </div>
+          <span class="notice-tag">ORACLE STATUS</span>
+        </div>
+        <div class="stats-grid" aria-label="Marketplace statistics">
+          <article class="stat">
+            <div>Eligible paid forecasts</div>
+            <strong id="stat-paid">—</strong
+            ><span>Trailing 30 days · after grace</span>
+          </article>
+          <article class="stat">
+            <div>Public reveal coverage</div>
+            <strong id="stat-reveal">—</strong
+            ><span id="stat-reveal-caption">Waiting for indexed evidence</span>
+          </article>
+          <article class="stat">
+            <div>Oracle-backed grades</div>
+            <strong id="stat-grades">—</strong
+            ><span>Independent of payment</span>
+          </article>
+          <article class="stat">
+            <div>Protocol fee</div>
+            <strong>0<span class="unit">%</span></strong
+            ><span>No reveal or grading rewards</span>
+          </article>
+        </div>
+        <div class="section-heading">
+          <h2>
+            Providers <span class="count-badge" id="provider-count">1</span>
+          </h2>
+          <div class="freshness" id="freshness">Connecting to testnet…</div>
+        </div>
+        <form class="filter-bar" id="filters">
+          <label for="min-reveal"
+            >Minimum reveal
+            <div class="input-unit">
+              <input
+                id="min-reveal"
+                name="min_reveal_pct"
+                type="number"
+                min="0"
+                max="100"
+                value="80"
+                step="1"
+              /><span>%</span>
+            </div></label
+          ><label for="min-samples"
+            >Minimum samples
+            <input
+              id="min-samples"
+              name="min_samples"
+              type="number"
+              min="0"
+              value="5"
+              step="1" /></label
+          ><label for="max-price"
+            >Maximum price
+            <div class="input-unit">
+              <input
+                id="max-price"
+                name="max_price"
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                value="0.01"
+                pattern="[0-9]+(\.[0-9]{1,8})?"
+                aria-describedby="max-price-help"
+              /><span>HBAR</span>
+            </div>
+            <small id="max-price-help">Up to 8 decimal places</small></label
+          ><label class="checkbox-label" for="allow-unproven"
+            ><input id="allow-unproven" name="allow_unproven" type="checkbox" />
+            Allow unproven providers</label
+          ><button class="primary" type="submit">Apply policy</button>
+        </form>
+        <div class="policy-result" id="policy-result" role="status">
+          Checking provider eligibility…
+        </div>
+        <div id="error" class="error" hidden role="alert"></div>
+        <div class="provider-grid" id="providers" aria-live="polite"></div>
+        <div class="footnote">
+          <span>↳</span> Reveal coverage describes public availability. Quality
+          describes graded samples. Neither changes what a seller is paid.
+        </div>
+        <div class="section-heading history-heading">
+          <h2>Recent signal history</h2>
+          <a href="#activity">View activity ↗</a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <caption class="sr-only">
+              Recent public signal history
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Forecast</th>
+                <th scope="col">Expiry</th>
+                <th scope="col">Reveal state</th>
+                <th scope="col">Quality</th>
+                <th scope="col">Evidence</th>
+              </tr>
+            </thead>
+            <tbody id="history"></tbody>
+          </table>
+          <div class="empty" id="history-empty">
+            <div class="empty-symbol">⌁</div>
+            <strong>A track record starts with one forecast.</strong>
+            <p>Real paid commitments will appear here as they are indexed.</p>
+          </div>
+        </div>
+        <button
+          class="secondary load-history"
+          id="load-history"
+          type="button"
+          hidden
+        >
+          Load older signals
+        </button>
+      </section>
+      <section class="view" id="activity-view" hidden>
+        <div class="page-heading">
+          <div>
+            <div class="eyebrow">FOLLOW THE EVIDENCE</div>
+            <h1>Network activity.</h1>
+            <p>Payment, commitment, reveal, and grade are separate events.</p>
+          </div>
+        </div>
+        <div class="activity-list" id="activity"></div>
+        <div class="cli-card">
+          <h2>Run your buyer agent</h2>
+          <p>
+            The buyer keeps its private key locally and enforces its spending
+            policy before signing.
+          </p>
+          <code>npm run buyer -- --allow-unproven</code>
+          <p>
+            Stop new purchases: <code>npm run buyer -- --kill</code
+            ><br />Inspect spending: <code>npm run buyer -- --status</code>
+          </p>
+        </div>
+      </section>
+      <section class="view" id="protocol-view" hidden>
+        <div class="page-heading">
+          <div>
+            <div class="eyebrow">ACCESS FIRST. EVIDENCE AFTER.</div>
+            <h1>A record you can inspect.</h1>
+            <p>
+              Providers keep their models private. Buyers purchase their
+              time-bound outputs.
+            </p>
+          </div>
+        </div>
+        <div class="protocol-grid">
+          <article>
+            <span>01</span>
+            <h2>Discover & pay</h2>
+            <p>
+              Your agent checks the seller's reveal history and your budget,
+              then signs one exact x402 payment on Hedera.
+            </p>
+          </article>
+          <article>
+            <span>02</span>
+            <h2>Verify the commitment</h2>
+            <p>
+              The forecast is committed before its outcome. The buyer receives
+              the payload and salt and checks the on-chain hash.
+            </p>
+          </article>
+          <article>
+            <span>03</span>
+            <h2>Reveal after expiry</h2>
+            <p>
+              Anyone holding the exact payload can reveal. Valid public reveals
+              contribute to the seller's separate reveal percentage.
+            </p>
+          </article>
+          <article>
+            <span>04</span>
+            <h2>Measure quality</h2>
+            <p>
+              Authenticated historical prices determine error and direction.
+              Grades never release, refund, or slash a payment.
+            </p>
+          </article>
+        </div>
+        <div class="cli-card">
+          <h2>What the numbers mean</h2>
+          <p>
+            Reveal coverage is revealed / eligible paid commitments. A
+            commitment becomes eligible five minutes after expiry. Quality uses
+            only graded samples; unrevealed and oracle-excluded samples remain
+            visible in coverage.
+          </p>
+          <p>
+            No history is unknown, not 0% or 100%. Volume is an untrusted demand
+            signal; self-payment and new identities remain possible.
+          </p>
+          <a
+            href="/v1/schema/defi.return_forecast.v1"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Read the machine-readable schema ↗</a
+          >
+        </div>
+      </section>
+      <footer>
+        Built for agents. Inspectable by everyone.<span
+          >Hedera · x402 · Pyth</span
+        >
+      </footer>
+    </main>
+    <dialog
+      id="detail"
+      aria-labelledby="detail-title"
+      aria-describedby="detail-description"
+    >
+      <div class="dialog-header">
+        <span class="eyebrow">PUBLIC EVIDENCE</span
+        ><button
+          class="icon-button"
+          id="close-detail"
+          type="button"
+          aria-label="Close details"
+        >
+          ×
+        </button>
+      </div>
+      <div id="detail-body"></div>
+    </dialog>
+  </body>
+</html>

@@ -1,0 +1,682 @@
+openapi: 3.1.0
+info:
+  title: Verifiable DeFi Signal Market API
+  version: 0.1.0
+  description: >-
+    Current REST surface for the Hedera testnet demo. Payment, commitment,
+    reveal, and grade are separate states. The Agent Card is REST metadata and
+    does not claim full A2A RPC interoperability.
+servers:
+  - url: http://127.0.0.1:3000
+    description: Local service
+  - url: https://valium-meant-atomic-articles.trycloudflare.com
+    description: Temporary public quick tunnel
+tags:
+  - name: public
+  - name: purchase
+    description: Quote, payment, and authenticated recovery
+paths:
+  /health:
+    get:
+      tags: [public]
+      summary: Process and dependency status
+      responses:
+        '200':
+          description: Liveness and current dependency state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  /.well-known/agent-card.json:
+    get:
+      tags: [public]
+      summary: REST discovery card
+      responses:
+        '200':
+          description: Public agent card and metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentCard'
+  /v1/schema/defi.return_forecast.v1:
+    get:
+      tags: [public]
+      summary: Canonical signal JSON Schema
+      responses:
+        '200':
+          description: JSON Schema for the public signal payload
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+  /v1/metadata/{agent_id}:
+    get:
+      tags: [public]
+      summary: Registry metadata projection
+      parameters:
+        - $ref: '#/components/parameters/AgentId'
+      responses:
+        '200':
+          description: Seller metadata and public payment capabilities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderMetadata'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/agents:
+    get:
+      tags: [public]
+      summary: Filtered discovery and buyer selection result
+      parameters:
+        - $ref: '#/components/parameters/MinSamples'
+        - $ref: '#/components/parameters/MinRevealPct'
+        - $ref: '#/components/parameters/MaxPrice'
+        - $ref: '#/components/parameters/AllowUnproven'
+        - $ref: '#/components/parameters/Feed'
+        - $ref: '#/components/parameters/MaxMaeBps'
+        - $ref: '#/components/parameters/MinGradeCoveragePct'
+        - $ref: '#/components/parameters/MinHitRatePct'
+      responses:
+        '200':
+          description: Provider list, policy, selected provider, and rejection reasons
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscoveryResponse'
+  /v1/agents/{agent_id}:
+    get:
+      tags: [public]
+      summary: One provider with computed metrics
+      parameters:
+        - $ref: '#/components/parameters/AgentId'
+        - $ref: '#/components/parameters/Feed'
+      responses:
+        '200':
+          description: Provider metadata and indexer-derived metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Provider'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/agents/{agent_id}/signals:
+    get:
+      tags: [public]
+      summary: Paginated public signal evidence
+      parameters:
+        - $ref: '#/components/parameters/AgentId'
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Public commitment, payment, reveal, and grade evidence
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [samples, next_offset]
+                properties:
+                  samples:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SampleEvidence'
+                  next_offset:
+                    oneOf:
+                      - type: integer
+                        minimum: 0
+                      - type: 'null'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/signals/{request_id}:
+    get:
+      tags: [public]
+      summary: One public signal evidence record
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      responses:
+        '200':
+          description: Public evidence; payload fields appear only after public reveal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SampleEvidence'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/activity:
+    get:
+      tags: [public]
+      summary: Public buyer activity projection
+      responses:
+        '200':
+          description: Delivery states and background evidence jobs
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [purchases, jobs]
+                properties:
+                  purchases:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PublicPurchase'
+                  jobs:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+  /v1/auth/challenges:
+    post:
+      tags: [purchase]
+      summary: Issue a request-scoped wallet challenge
+      description: The challenge expires after 120 seconds and is single-use.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthScope'
+      responses:
+        '200':
+          description: Challenge message to sign with the buyer account key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Challenge'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/signals:
+    post:
+      tags: [purchase]
+      summary: Quote or execute one bound paid forecast request
+      description: >-
+        Without PAYMENT-SIGNATURE, returns an x402 v2 quote with HTTP 402.
+        With PAYMENT-SIGNATURE and X-Wallet-Proof, validates the exact payment,
+        resumes the original durable workflow, and returns 200 for delivered or
+        202 while payment or commitment reconciliation remains pending.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BuyRequest'
+      parameters:
+        - $ref: '#/components/parameters/WalletProof'
+        - $ref: '#/components/parameters/PaymentSignature'
+      responses:
+        '200':
+          description: Delivered paid response, authenticated by the buyer proof
+          headers:
+            PAYMENT-RESPONSE:
+              schema:
+                type: string
+                format: byte
+              description: Base64-encoded payment success and native transaction reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Purchase'
+        '202':
+          description: Original payment or commitment is still being reconciled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Purchase'
+        '402':
+          description: x402 v2 requirements and bound quote
+          headers:
+            PAYMENT-REQUIRED:
+              schema:
+                type: string
+                description: Base64-encoded JSON x402 requirements
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [x402Version, resource, accepts, quote]
+                properties:
+                  x402Version:
+                    type: integer
+                    const: 2
+                  resource:
+                    type: object
+                    additionalProperties: true
+                  accepts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaymentRequirements'
+                  quote:
+                    $ref: '#/components/schemas/Quote'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/purchases/{request_id}:
+    get:
+      tags: [purchase]
+      summary: Recover the original paid response or workflow state
+      description: Requires the buyer's request-scoped X-Wallet-Proof and never creates a replacement payment.
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/WalletProof'
+      responses:
+        '200':
+          description: Original persisted purchase state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Purchase'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  parameters:
+    AgentId:
+      name: agent_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[1-9][0-9]{0,77}$'
+    RequestId:
+      name: request_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^0x[0-9a-f]{64}$'
+    Feed:
+      name: feed
+      in: query
+      schema:
+        type: string
+    MinSamples:
+      name: min_samples
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 5
+    MinRevealPct:
+      name: min_reveal_pct
+      in: query
+      schema:
+        type: number
+        minimum: 0
+        maximum: 100
+        default: 80
+    MaxPrice:
+      name: max_price
+      in: query
+      schema:
+        type: string
+        pattern: '^[0-9]+$'
+        default: '10000000'
+    AllowUnproven:
+      name: allow_unproven
+      in: query
+      schema:
+        type: boolean
+        default: false
+    MaxMaeBps:
+      name: max_mae_bps
+      in: query
+      schema:
+        type: number
+        minimum: 0
+    MinGradeCoveragePct:
+      name: min_grade_coverage_pct
+      in: query
+      schema:
+        type: number
+        minimum: 0
+        maximum: 100
+    MinHitRatePct:
+      name: min_hit_rate_pct
+      in: query
+      schema:
+        type: number
+        minimum: 0
+        maximum: 100
+    WalletProof:
+      name: X-Wallet-Proof
+      in: header
+      required: false
+      schema:
+        type: string
+        format: byte
+      description: Base64-encoded JSON AuthProof; required for paid requests and recovery.
+    PaymentSignature:
+      name: PAYMENT-SIGNATURE
+      in: header
+      required: false
+      schema:
+        type: string
+        format: byte
+      description: Base64-encoded JSON x402 PaymentPayload; required to execute payment.
+  responses:
+    BadRequest:
+      description: Validation or workflow error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid wallet proof
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    Health:
+      type: object
+      required: [live, network, contracts_configured, oracle_api_configured, indexer, worker_enabled]
+      properties:
+        live:
+          type: boolean
+        network:
+          type: string
+          const: hedera:testnet
+        contracts_configured:
+          type: boolean
+        oracle_api_configured:
+          type: boolean
+        indexer:
+          type: [object, 'null']
+          additionalProperties: true
+        worker_enabled:
+          type: boolean
+    AgentCard:
+      type: object
+      required: [name, url, version, capabilities, defaultInputModes, defaultOutputModes, skills, metadata]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        url:
+          type: string
+          format: uri
+        version:
+          type: string
+        capabilities:
+          type: object
+          additionalProperties: true
+        defaultInputModes:
+          type: array
+          items: { type: string }
+        defaultOutputModes:
+          type: array
+          items: { type: string }
+        skills:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        metadata:
+          $ref: '#/components/schemas/ProviderMetadata'
+    ProviderMetadata:
+      type: object
+      required: [agent_id, name, schema, model_version, distribution, endpoint, network, asset, price, payTo, payment_modes, feed_ids]
+      properties:
+        agent_id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        schema: { type: string, const: defi.return_forecast.v1 }
+        model_version: { type: string }
+        distribution: { type: string, const: non-exclusive }
+        endpoint: { type: string, format: uri }
+        agent_card_url: { type: string, format: uri }
+        network: { type: string, const: hedera:testnet }
+        asset: { type: string, const: '0.0.0' }
+        price: { type: string, pattern: '^[0-9]+$' }
+        payTo: { type: string }
+        payment_modes:
+          type: array
+          items: { type: string }
+        feed_ids:
+          type: array
+          items: { type: string }
+        min_target_lead: { type: integer }
+        max_target_lead: { type: integer }
+        metrics_url: { type: string, format: uri }
+        protocol_fee_pct: { type: number }
+    Metrics:
+      type: object
+      required: [metric_version, schema, payment_mode, eligible_paid_count, revealed_count, unrevealed_count, reveal_pct, graded_count, grade_coverage_pct, history_status, indexed_through, computed_at, is_stale]
+      properties:
+        metric_version: { type: string }
+        schema: { type: string }
+        payment_mode: { type: string, const: x402 }
+        feed_filter: { type: [string, 'null'] }
+        horizon_filter: { type: object, additionalProperties: true }
+        window_start: { type: integer }
+        window_end: { type: integer }
+        reveal_grace_seconds: { type: integer }
+        indexed_through: { type: integer }
+        computed_at: { type: integer }
+        lag_seconds: { type: integer }
+        is_stale: { type: boolean }
+        eligible_paid_count: { type: integer }
+        revealed_count: { type: integer }
+        unrevealed_count: { type: integer }
+        reveal_pct: { type: [number, 'null'] }
+        graded_count: { type: integer }
+        grade_coverage_pct: { type: [number, 'null'] }
+        directional_hit_rate_pct: { type: [number, 'null'] }
+        mean_absolute_error_bps: { type: [number, 'null'] }
+        oracle_excluded_count: { type: integer }
+        oracle_unavailable_count: { type: integer }
+        grade_pending_count: { type: integer }
+        unique_paying_wallets: { type: integer }
+        pending_expiry_or_grace_count: { type: integer }
+        payment_verification_pending_count: { type: integer }
+        invalid_payment_reference_count: { type: integer }
+        history_status: { type: string, enum: [insufficient_history, available] }
+        lifetime: { $ref: '#/components/schemas/MetricsSummary' }
+        evidence_url: { type: string }
+    MetricsSummary:
+      type: object
+      additionalProperties: true
+    Provider:
+      allOf:
+        - $ref: '#/components/schemas/ProviderMetadata'
+        - type: object
+          required: [active, metrics]
+          properties:
+            active: { type: boolean }
+            registry_error: { type: [string, 'null'] }
+            metrics: { $ref: '#/components/schemas/Metrics' }
+    DiscoveryPolicy:
+      type: object
+      required: [min_samples, min_reveal_pct, max_price, allow_unproven]
+      properties:
+        min_samples: { type: integer }
+        min_reveal_pct: { type: number }
+        max_price: { type: string }
+        allow_unproven: { type: boolean }
+        feed: { type: [string, 'null'] }
+        max_mae_bps: { type: [number, 'null'] }
+        min_grade_coverage_pct: { type: [number, 'null'] }
+        min_hit_rate_pct: { type: [number, 'null'] }
+    DiscoveryResponse:
+      type: object
+      required: [agents, policy, selected_agent_id, decisions, status]
+      properties:
+        agents:
+          type: array
+          items: { $ref: '#/components/schemas/Provider' }
+        policy: { $ref: '#/components/schemas/DiscoveryPolicy' }
+        selected_agent_id: { type: [string, 'null'] }
+        decisions:
+          type: array
+          items:
+            type: object
+            required: [agent_id, reasons]
+            properties:
+              agent_id: { type: string }
+              reasons:
+                type: array
+                items: { type: string }
+        status: { type: string, enum: [selected, no_eligible_provider] }
+    BuyRequest:
+      type: object
+      additionalProperties: false
+      required: [request_id, buyer, agent_id, schema, price_feed_id, target_time]
+      properties:
+        request_id: { type: string, pattern: '^0x[0-9a-f]{64}$' }
+        buyer: { type: string, pattern: '^0[.]0[.][1-9][0-9]{0,18}$' }
+        agent_id: { type: string, pattern: '^[1-9][0-9]{0,77}$' }
+        schema: { type: string, const: defi.return_forecast.v1 }
+        price_feed_id: { type: string }
+        target_time: { type: integer, minimum: 0 }
+    PaymentRequirements:
+      type: object
+      required: [scheme, network, asset, amount, payTo, maxTimeoutSeconds, extra]
+      properties:
+        scheme: { type: string, const: exact }
+        network: { type: string, const: hedera:testnet }
+        asset: { type: string, const: '0.0.0' }
+        amount: { type: string }
+        payTo: { type: string }
+        maxTimeoutSeconds: { type: integer, maximum: 120 }
+        extra:
+          type: object
+          required: [feePayer]
+          properties:
+            feePayer: { type: string }
+    Quote:
+      type: object
+      required: [request, requirements, created_at, expires_at]
+      properties:
+        request: { $ref: '#/components/schemas/BuyRequest' }
+        requirements: { $ref: '#/components/schemas/PaymentRequirements' }
+        created_at: { type: integer }
+        expires_at: { type: integer }
+    AuthScope:
+      type: object
+      additionalProperties: false
+      required: [buyer, request_id, method, path, body_hash]
+      properties:
+        buyer: { type: string, pattern: '^0[.]0[.][1-9][0-9]{0,18}$' }
+        request_id: { type: string, pattern: '^0x[0-9a-f]{64}$' }
+        method: { type: string, enum: [GET, POST] }
+        path: { type: string, pattern: '^/v1/' }
+        body_hash: { type: string, pattern: '^[0-9a-f]{64}$' }
+    Challenge:
+      type: object
+      required: [id, message, expires_at]
+      properties:
+        id: { type: string, pattern: '^0x[0-9a-f]{64}$' }
+        message: { type: string }
+        expires_at: { type: integer }
+    AuthProof:
+      type: object
+      required: [challenge_id, signature]
+      properties:
+        challenge_id: { type: string, pattern: '^0x[0-9a-f]{64}$' }
+        signature: { type: string, pattern: '^[0-9a-fA-F]{128}$' }
+    PaymentPayload:
+      type: object
+      required: [x402Version, accepted, payload]
+      properties:
+        x402Version: { type: integer, const: 2 }
+        accepted: { $ref: '#/components/schemas/PaymentRequirements' }
+        payload:
+          type: object
+          additionalProperties: true
+    Signal:
+      type: object
+      additionalProperties: false
+      required: [schema, request_id, agent_id, price_feed_id, issued_at, target_time, predicted_return_bps, model_version, distribution]
+      properties:
+        schema: { type: string, const: defi.return_forecast.v1 }
+        request_id: { type: string, pattern: '^0x[0-9a-f]{64}$' }
+        agent_id: { type: string }
+        price_feed_id: { type: string }
+        issued_at: { type: integer }
+        target_time: { type: integer }
+        predicted_return_bps: { type: integer }
+        model_version: { type: string }
+        distribution: { type: string, const: non-exclusive }
+    Prepared:
+      type: object
+      description: Private buyer response. Returned only after authenticated purchase recovery or delivery.
+      required: [signal, salt, hash]
+      properties:
+        signal: { $ref: '#/components/schemas/Signal' }
+        salt: { type: string }
+        hash: { type: string }
+    Purchase:
+      type: object
+      required: [quote, status]
+      properties:
+        quote: { $ref: '#/components/schemas/Quote' }
+        status:
+          type: string
+          enum: [quoted, prepared, settlement_pending, paid, commit_pending, delivered, paid_commit_failed, payment_failed]
+        prepared: { $ref: '#/components/schemas/Prepared' }
+        payment: { $ref: '#/components/schemas/PaymentPayload' }
+        payment_ref: { type: [string, 'null'] }
+        commitment:
+          type: object
+          properties:
+            transaction_id: { type: string }
+        error: { type: [string, 'null'] }
+    PublicPurchase:
+      type: object
+      required: [request_id, agent_id, status, target_time, amount, asset, payment_ref, commitment_hash, commitment_transaction_id, error]
+      properties:
+        request_id: { type: string }
+        agent_id: { type: string }
+        status: { type: string }
+        target_time: { type: integer }
+        amount: { type: string }
+        asset: { type: string }
+        payment_ref: { type: [string, 'null'] }
+        commitment_hash: { type: [string, 'null'] }
+        commitment_transaction_id: { type: [string, 'null'] }
+        error: { type: [string, 'null'] }
+    SampleEvidence:
+      type: object
+      required: [request_id, agent_id, schema, price_feed_id, payment_mode, payment_status, payer, committed_at, target_time, revealed_at, grade, oracle_status]
+      properties:
+        request_id: { type: string }
+        agent_id: { type: string }
+        schema: { type: string }
+        price_feed_id: { type: string }
+        payment_mode: { type: string, const: x402 }
+        payment_status: { type: string, enum: [verified, pending, invalid] }
+        payer: { type: string }
+        committed_at: { type: integer }
+        target_time: { type: integer }
+        revealed_at: { type: [integer, 'null'] }
+        payment_verified_at: { type: [integer, 'null'] }
+        grade: { type: [object, 'null'], additionalProperties: true }
+        oracle_status: { type: string, enum: [pending, excluded, unavailable] }
+        oracle_status_at: { type: [integer, 'null'] }
+        payment_ref: { type: string }
+        commitment_hash: { type: string }
+        transaction_hash: { type: string }
+        native_payment_id: { type: string }
+        reveal:
+          type: [object, 'null']
+          additionalProperties: true
