@@ -84,7 +84,8 @@ The unit suite includes real ABI indexer replay with pagination, duplicate-event
 
 `npm run test:coverage` now includes every protocol and service module and enforces at least 80% statement and line coverage.
 The latest coverage run reported 94.57% statement and line coverage overall, 93.78% for service modules, and 82.55% for the indexer, above the enforced 80% floor.
-The secret-free GitHub Actions workflow runs `npm ci`, compiles contracts before artifact-dependent tests, then runs the complete check and enforced coverage gate; the published baseline run passed.
+The secret-free GitHub Actions workflow runs `npm ci`, compiles contracts before artifact-dependent tests, then runs the complete check and enforced coverage gate.
+The published baseline and P0 interface follow-up runs both passed.
 
 ## Browser QA boundary
 
@@ -119,7 +120,7 @@ The production npm audit is reported as zero findings after the overrides, with 
 
 ## Remaining submission gaps
 
-The public repository is [chayan-bit/ethonline-hackathon](https://github.com/chayan-bit/ethonline-hackathon), and the baseline CI run passed.
+The public repository is [chayan-bit/ethonline-hackathon](https://github.com/chayan-bit/ethonline-hackathon), and both published code CI runs passed.
 The hackathon event submission and video have not been created.
 The public service is temporary rather than a permanent deployment.
 Full A2A RPC interoperability is not implemented; the current Agent Card is REST metadata.

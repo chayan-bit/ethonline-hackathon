@@ -212,5 +212,6 @@ The current package uses SDK `2.85.0` with pinned patched transitive dependencie
 Production dependency audit is reported as zero findings after those overrides, while 11 low development findings remain.
 The temporary Hermes trial key must be renewed within 14 days; no paid Pyth plan has been purchased.
 
-The source is published at [chayan-bit/ethonline-hackathon](https://github.com/chayan-bit/ethonline-hackathon), and its baseline GitHub Actions run passed.
+The source is published at [chayan-bit/ethonline-hackathon](https://github.com/chayan-bit/ethonline-hackathon).
+Both the [baseline CI run](https://github.com/chayan-bit/ethonline-hackathon/actions/runs/34001749831) and the [P0 interface follow-up run](https://github.com/chayan-bit/ethonline-hackathon/actions/runs/34002452903) passed.
 The hackathon event submission and video have not been created.
