@@ -47,7 +47,7 @@ async function main() {
     const registryAbi = artifact('AgentRegistry').abi;
     if (!state.agent_transaction_id) {
       const result = await executeContract(config, state.registry!.address, registryAbi, 'registerAgent', [
-        BigInt(config.agentId), zeroAddress, accountAddress(config.operatorId), `${config.baseUrl}/v1/metadata/${config.agentId}`, metadataHash, SCHEMA_ID, 1,
+        BigInt(config.agentId), zeroAddress, accountAddress(config.payeeId!), `${config.baseUrl}/v1/metadata/${config.agentId}`, metadataHash, SCHEMA_ID, 1,
       ]);
       state = { ...state, agent_transaction_id: result.transaction_id }; save(state);
     } else if (process.argv.includes('--update-metadata')) {

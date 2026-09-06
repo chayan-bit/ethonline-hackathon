@@ -57,6 +57,7 @@ npm run test:coverage
 
 Fill `.env` manually from the testnet operator and buyer accounts.
 At minimum, set `HEDERA_NETWORK=hedera:testnet`, ECDSA testnet `HEDERA_OPERATOR_ID` and `HEDERA_OPERATOR_KEY`, ECDSA testnet `HEDERA_BUYER_ID` and `HEDERA_BUYER_KEY`, `REGISTRY_ADDRESS`, `LEDGER_ADDRESS`, `HCS_TOPIC_ID`, and `PYTH_API_KEY`.
+`HEDERA_PAYEE_ID` defaults to the operator account and may be set separately when the payment recipient differs from the registry owner.
 The current `.env` also names the public base URL and must match the URL stored in registry metadata.
 
 The account setup script uses the existing funded faucet operator to create bounded operator and buyer accounts, then persists the generated keys locally before funding.
@@ -98,6 +99,19 @@ npm run buyer -- --status               # show kill-switch and budget state
 
 Do not run the exploratory command during evidence review unless the operator explicitly wants another paid request.
 The buyer validates the exact network, asset, amount, payee, fee payer, quote, request binding, and commitment before reporting a verified response.
+
+The initial seller registration is performed by `npm run deploy`.
+Existing registry state can be inspected and owner-only lifecycle changes can be validated without mutation:
+
+```sh
+npm run seller -- --status
+npm run seller -- --active false --dry-run
+```
+
+After checking the dry-run, the operator can use exactly one of `--active true|false`, `--gateway 0.0.ACCOUNT|none`, `--payee 0.0.ACCOUNT`, or `--metadata`.
+These commands submit owner-authorized registry transactions, so do not run a mutating form during evidence review unless that exact lifecycle change is intended.
+Payee rotation spans separate registry transactions: deactivate sales, set the new `HEDERA_PAYEE_ID`, run the payee update and metadata update, restart the service, verify `--status`, then reactivate.
+Keeping the provider inactive during that window prevents quotes while the registry payee and metadata hash are temporarily out of sync.
 
 ## Payment and evidence flow
 
@@ -178,8 +192,8 @@ Private purchase recovery requires a short-lived wallet proof bound to buyer, re
 
 Run `npm run compile`, `npm run check`, `npm run test:coverage`, and `npm run preflight` before treating a checkout as a release candidate.
 The preflight exit status 2 is intentional while the oracle compatibility result is false.
-The latest completed green run passed 43 unit tests and 13 contract tests.
-The latest coverage run reported 93.27% statement and line coverage overall, 92.07% for service modules, and 82.55% for the indexer, above the enforced 80% floor.
+The latest completed green run passed 46 unit tests and 13 contract tests.
+The latest coverage run reported 94.57% statement and line coverage overall, 93.78% for service modules, and 82.55% for the indexer, above the enforced 80% floor.
 
 The exact remaining P0 acceptance boundary is mapped in [the status report](docs/status-report.md).
 
@@ -198,4 +212,5 @@ The current package uses SDK `2.85.0` with pinned patched transitive dependencie
 Production dependency audit is reported as zero findings after those overrides, while 11 low development findings remain.
 The temporary Hermes trial key must be renewed within 14 days; no paid Pyth plan has been purchased.
 
-The hackathon public repository, event submission, and video are not created by this checkout.
+The source is published at [chayan-bit/ethonline-hackathon](https://github.com/chayan-bit/ethonline-hackathon), and its baseline GitHub Actions run passed.
+The hackathon event submission and video have not been created.

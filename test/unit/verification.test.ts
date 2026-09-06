@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { confirmCommitment, validateAndReconcilePurchase } from '../../src/protocol/verification.ts';
+import { confirmCommitment, validateAndReconcilePurchase, validateQuote } from '../../src/protocol/verification.ts';
 import { Store } from '../../src/service/store.ts';
 import type { PaymentPayload } from '@x402/core/types';
 import type { BuyRequest, Quote } from '../../src/service/gateway.ts';
@@ -48,4 +48,13 @@ test('buyer validates a resumed response against its local request before mutati
   assert.equal(store.reservations().find(row => row.id === idA)?.state, 'reserved');
   assert.equal(store.reservations().find(row => row.id === idB)?.state, 'reserved');
   store.close();
+});
+
+test('buyer binds a quote to the payee from validated discovery metadata', () => {
+  const request = { request_id: `0x${'aa'.repeat(32)}`, buyer: '0.0.1001', agent_id: '1', schema: 'defi.return_forecast.v1', price_feed_id: `0x${'11'.repeat(32)}`, target_time: 2_000 } as BuyRequest;
+  const requirements = { scheme: 'exact', network: 'hedera:testnet', asset: '0.0.0', amount: '100', payTo: '0.0.1002', maxTimeoutSeconds: 120, extra: { feePayer: '0.0.7162784' } } as const;
+  const quote = { request, requirements, created_at: 1_000, expires_at: 1_120 };
+  const provider = { price: '100', payTo: '0.0.1002' };
+  assert.equal(validateQuote(quote, request, provider, '0.0.7162784', 1_000).requirements.payTo, provider.payTo);
+  assert.throws(() => validateQuote({ ...quote, requirements: { ...requirements, payTo: '0.0.9999' } }, request, provider, '0.0.7162784', 1_000), /unsafe_quote/);
 });

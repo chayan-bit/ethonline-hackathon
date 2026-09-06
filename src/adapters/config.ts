@@ -21,6 +21,10 @@ export function loadConfig(env = process.env) {
     if (value && !isAddress(value)) throw new Error(`Invalid ${name}`);
     return value as Address | undefined;
   };
+  const account = (name: string, value?: string) => {
+    if (value && !/^0\.0\.[1-9][0-9]{0,18}$/.test(value)) throw new Error(`Invalid ${name}`);
+    return value;
+  };
   const baseUrl = new URL(env.PUBLIC_BASE_URL ?? 'http://localhost:3000');
   if (baseUrl.protocol !== 'https:' && !(baseUrl.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(baseUrl.hostname))) throw new Error('Public service requires HTTPS');
   const port = Number(env.PORT ?? 3000);
@@ -32,8 +36,9 @@ export function loadConfig(env = process.env) {
   return {
     network: 'hedera:testnet' as const, rpcUrl: url('HEDERA_RPC_URL'), mirrorUrl: url('MIRROR_URL'),
     facilitatorUrl: url('FACILITATOR_URL'), hermesUrl: url('HERMES_URL'), pythApiKey: env.PYTH_API_KEY, pythAddress: address('PYTH_ADDRESS', DEFAULTS.PYTH_ADDRESS)!,
-    operatorId: env.HEDERA_OPERATOR_ID, operatorKey: env.HEDERA_OPERATOR_KEY,
-    buyerId: env.HEDERA_BUYER_ID, buyerKey: env.HEDERA_BUYER_KEY,
+    operatorId: account('HEDERA_OPERATOR_ID', env.HEDERA_OPERATOR_ID), operatorKey: env.HEDERA_OPERATOR_KEY,
+    payeeId: account('HEDERA_PAYEE_ID', env.HEDERA_PAYEE_ID || env.HEDERA_OPERATOR_ID),
+    buyerId: account('HEDERA_BUYER_ID', env.HEDERA_BUYER_ID), buyerKey: env.HEDERA_BUYER_KEY,
     registryAddress: address('REGISTRY_ADDRESS', deployment.registry?.address), ledgerAddress: address('LEDGER_ADDRESS', deployment.ledger?.address), ledgerDeploymentBlock,
     topicId: env.HCS_TOPIC_ID || deployment.topic_id, baseUrl: baseUrl.origin, port, price,
     agentId: '1', workerEnabled: env.WORKER_ENABLED !== 'false', databasePath: env.DATABASE_PATH ?? 'data/market.db',

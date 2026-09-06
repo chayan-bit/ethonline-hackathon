@@ -39,7 +39,7 @@ test('unknown history stays null; watermark rather than wall clock controls coho
 
 test('discovery rejects cheap low-reveal provider, stale data, and unknown quality', () => {
   const m = computeMetrics(rows, { agentId: '1', indexedThrough: now, computedAt: now });
-  const provider = { agent_id: '1', active: true, price: '100', network: 'hedera:testnet', schema: 'defi.return_forecast.v1', asset: '0.0.0', feed_ids: ['eth'], metrics: m };
+  const provider = { agent_id: '1', active: true, price: '100', payTo: '0.0.1002', network: 'hedera:testnet', schema: 'defi.return_forecast.v1', asset: '0.0.0', feed_ids: ['eth'], metrics: m };
   const low = { ...provider, agent_id: '2', price: '1', metrics: { ...m, revealed_count: 6, reveal_pct: 60 } };
   assert.equal(selectProvider([low, provider], DEFAULT_POLICY).selected?.agent_id, '1');
   assert.equal(selectProvider([{ ...provider, metrics: { ...m, is_stale: true } }], DEFAULT_POLICY).selected, null);
@@ -63,10 +63,11 @@ test('duplicate events and post-watermark payment evidence do not inflate metric
 
 test('buyer rejects malformed provider metadata before selection', () => {
   const metrics = computeMetrics(rows, { agentId: '1', indexedThrough: now, computedAt: now });
-  const provider = { agent_id: '1', active: true, price: '100', network: 'hedera:testnet', schema: 'defi.return_forecast.v1', asset: '0.0.0', feed_ids: ['eth'], metrics };
+  const provider = { agent_id: '1', active: true, price: '100', payTo: '0.0.1002', network: 'hedera:testnet', schema: 'defi.return_forecast.v1', asset: '0.0.0', feed_ids: ['eth'], metrics };
   assert.deepEqual(parseProviders([provider]), [provider]);
   for (const malformed of [null, {}, [null], [{ ...provider, agent_id: 1 }], [{ ...provider, feed_ids: 'eth' }],
-    [{ ...provider, metrics: { ...metrics, reveal_pct: '80' } }], [{ ...provider, metrics: { ...metrics, reveal_pct: 70 } }]]) {
+    [{ ...provider, payTo: 'not-an-account' }], [{ ...provider, metrics: { ...metrics, reveal_pct: '80' } }],
+    [{ ...provider, metrics: { ...metrics, reveal_pct: 70 } }]]) {
     assert.throws(() => parseProviders(malformed), /invalid_discovery_response/);
   }
 });

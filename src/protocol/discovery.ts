@@ -1,13 +1,14 @@
 import { SCHEMA } from './signal.ts';
 import type { Metrics } from './metrics.ts';
-export type Provider = { agent_id: string; active: boolean; price: string; network: string; schema: string; asset: string; feed_ids: string[]; metrics: Metrics };
+export type Provider = { agent_id: string; active: boolean; price: string; payTo?: string; network: string; schema: string; asset: string; feed_ids: string[]; metrics: Metrics };
+export type DiscoveredProvider = Provider & { payTo: string };
 export type DiscoveryPolicy = {
   min_samples: number; min_reveal_pct: number; max_price: string; allow_unproven: boolean;
   feed?: string; max_mae_bps?: number; min_grade_coverage_pct?: number; min_hit_rate_pct?: number;
 };
 export const DEFAULT_POLICY: DiscoveryPolicy = Object.freeze({ min_samples: 5, min_reveal_pct: 80, max_price: '10000000', allow_unproven: false });
 
-export function parseProviders(input: unknown): Provider[] {
+export function parseProviders(input: unknown): DiscoveredProvider[] {
   if (!Array.isArray(input) || input.length > 1_000) throw new Error('invalid_discovery_response');
   for (const value of input) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('invalid_discovery_response');
@@ -19,6 +20,7 @@ export function parseProviders(input: unknown): Provider[] {
     const revealed = Number(m?.revealed_count);
     const graded = Number(m?.graded_count);
     if (typeof p.agent_id !== 'string' || !/^[1-9][0-9]{0,77}$/.test(p.agent_id) || typeof p.active !== 'boolean' || typeof p.price !== 'string'
+      || typeof p.payTo !== 'string' || !/^0\.0\.[1-9][0-9]{0,18}$/.test(p.payTo)
       || typeof p.network !== 'string' || typeof p.schema !== 'string' || typeof p.asset !== 'string'
       || !Array.isArray(p.feed_ids) || p.feed_ids.length > 100 || p.feed_ids.some(feed => typeof feed !== 'string')
       || !m || Array.isArray(m) || typeof m.is_stale !== 'boolean' || !count('eligible_paid_count') || !count('revealed_count')
@@ -30,7 +32,7 @@ export function parseProviders(input: unknown): Provider[] {
       throw new Error('invalid_discovery_response');
     }
   }
-  return input as Provider[];
+  return input as DiscoveredProvider[];
 }
 
 function rejectionReasons(p: Provider, policy: DiscoveryPolicy): string[] {
@@ -50,7 +52,7 @@ function rejectionReasons(p: Provider, policy: DiscoveryPolicy): string[] {
   ].filter((r): r is string => typeof r === 'string');
 }
 
-export function selectProvider(providers: readonly Provider[], policy: DiscoveryPolicy) {
+export function selectProvider<T extends Provider>(providers: readonly T[], policy: DiscoveryPolicy) {
   if (!Number.isSafeInteger(policy.min_samples) || policy.min_samples < 0 || !Number.isFinite(policy.min_reveal_pct)
     || policy.min_reveal_pct < 0 || policy.min_reveal_pct > 100 || !/^\d+$/.test(policy.max_price)) throw new Error('invalid_policy');
   for (const value of [policy.max_mae_bps, policy.min_grade_coverage_pct, policy.min_hit_rate_pct]) {

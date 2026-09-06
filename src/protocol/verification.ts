@@ -19,6 +19,19 @@ export function validateAndReconcilePurchase(input: unknown, expectedId: string,
   return result as BoundPurchase;
 }
 
+export function validateQuote(input: unknown, request: Quote['request'], provider: { price: string; payTo: string }, feePayer: string, now: number): Quote {
+  if (!input || typeof input !== 'object' || Array.isArray(input) || !Number.isSafeInteger(now)) throw new Error('unsafe_quote');
+  const quote = input as Quote;
+  const requirements = quote.requirements;
+  if (!requirements || !isDeepStrictEqual(quote.request, request) || requirements.network !== 'hedera:testnet'
+    || requirements.asset !== '0.0.0' || requirements.amount !== provider.price || requirements.payTo !== provider.payTo
+    || requirements.scheme !== 'exact' || requirements.extra?.feePayer !== feePayer
+    || !Number.isSafeInteger(quote.created_at) || quote.created_at > now || !Number.isSafeInteger(quote.expires_at)
+    || quote.expires_at <= now || quote.expires_at > now + 120 || !Number.isSafeInteger(requirements.maxTimeoutSeconds)
+    || requirements.maxTimeoutSeconds < 1 || requirements.maxTimeoutSeconds > 120) throw new Error('unsafe_quote');
+  return quote;
+}
+
 export async function confirmCommitment<T extends { exists: boolean; hash: string }>(
   requestId: string, expectedHash: string, read: (id: string) => Promise<T>, wait: () => Promise<unknown> = () => setTimeout(1000),
 ): Promise<T> {

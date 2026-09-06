@@ -12,7 +12,7 @@ import { DEFAULT_POLICY, parseProviders, selectProvider } from './protocol/disco
 import { ETH_USD, SCHEMA, hashSignal, randomId } from './protocol/signal.ts';
 import type { BuyRequest, Purchase, Quote } from './service/gateway.ts';
 import type { PaymentPayload } from '@x402/core/types';
-import { confirmCommitment, validateAndReconcilePurchase } from './protocol/verification.ts';
+import { confirmCommitment, validateAndReconcilePurchase, validateQuote } from './protocol/verification.ts';
 
 const { values } = parseArgs({ options: { 'allow-unproven': { type: 'boolean' }, resume: { type: 'string' }, kill: { type: 'boolean' }, enable: { type: 'boolean' }, status: { type: 'boolean' }, 'min-reveal': { type: 'string' } } });
 const config = loadConfig();
@@ -74,11 +74,9 @@ async function purchase(key: PrivateKey) {
   const raw = JSON.stringify(request);
   const response = await fetch(`${config.baseUrl}/v1/signals`, { method: 'POST', redirect: 'error', headers: { 'Content-Type': 'application/json' }, body: raw, signal: AbortSignal.timeout(20000) });
   if (response.status !== 402) throw new Error('expected_x402_quote');
-  const quote = record(await response.json()).quote as Quote;
+  const quoteResponse = record(await response.json()).quote;
   const feePayer = await facilitator(config).feePayer();
-  if (!quote || JSON.stringify(quote.request) !== raw || quote.requirements.network !== 'hedera:testnet' || quote.requirements.asset !== '0.0.0'
-    || quote.requirements.amount !== selection.selected.price || quote.requirements.scheme !== 'exact' || quote.requirements.extra.feePayer !== feePayer
-    || quote.requirements.payTo !== config.operatorId || quote.expires_at <= Math.floor(Date.now() / 1000) || quote.requirements.maxTimeoutSeconds > 120) throw new Error('unsafe_quote');
+  const quote = validateQuote(quoteResponse, request, selection.selected, feePayer, Math.floor(Date.now() / 1000));
   store.reserve(request.request_id, request.agent_id, new Date().toISOString().slice(0, 10), BigInt(quote.requirements.amount), caps.provider, caps.global);
   let payment: PaymentPayload;
   let authorization: string;

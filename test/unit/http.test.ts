@@ -30,7 +30,7 @@ function privatePurchase(): Purchase {
 
 async function runningApp() {
   const store = new Store(':memory:');
-  const config = loadConfig({ PUBLIC_BASE_URL: 'http://localhost:3000' });
+  const config = loadConfig({ PUBLIC_BASE_URL: 'http://localhost:3000', HEDERA_OPERATOR_ID: '0.0.1001', HEDERA_PAYEE_ID: '0.0.1002' });
   const key = PrivateKey.generateECDSA();
   const auth = new Auth(store, config.baseUrl, async () => key.publicKey, () => 1_000);
   const app = createApp({ config, store,
@@ -50,7 +50,7 @@ function proofHeader(auth: Auth, key: InstanceType<typeof PrivateKey>, scope: Pa
 
 test('HTTP boundary returns real 402 shape and denies unauthenticated paid recovery', async () => {
   const store = new Store(':memory:');
-  const config = loadConfig({ PUBLIC_BASE_URL: 'http://localhost:3000' });
+  const config = loadConfig({ PUBLIC_BASE_URL: 'http://localhost:3000', HEDERA_OPERATOR_ID: '0.0.1001', HEDERA_PAYEE_ID: '0.0.1002' });
   const app = createApp({ config, store,
     gateway: { quote: async (request: any) => ({ request, created_at: 1000, expires_at: 1120, requirements: { scheme: 'exact', network: 'hedera:testnet', asset: '0.0.0', amount: '100', payTo: '0.0.1002', maxTimeoutSeconds: 120, extra: { feePayer: '0.0.7162784' } } }), purchase: async () => { throw new Error('should_not_run'); } },
     seller: async () => ({ active: true }), auth: new Auth(store, config.baseUrl, async () => PrivateKey.generateECDSA().publicKey),
@@ -79,16 +79,62 @@ test('HTTP rejects malformed bodies and refuses file probing outside the static 
   try {
     const invalidType = await fetch(`${h.base}/v1/signals`, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: '{}' });
     assert.equal(invalidType.status, 400);
-    assert.deepEqual(await invalidType.json(), { error: 'invalid_content_type' });
+    assert.deepEqual(await invalidType.json(), { error: 'invalid_content_type', request_id: null, retry: 'correct_request' });
     assert.equal((await fetch(`${h.base}/v1/signals`, { method: 'POST', headers: { 'Content-Type': 'application/jsonp' }, body: '{}' })).status, 400);
     const invalidJson = await fetch(`${h.base}/v1/signals`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{' });
     assert.equal(invalidJson.status, 400);
-    assert.deepEqual(await invalidJson.json(), { error: 'invalid_json' });
+    assert.deepEqual(await invalidJson.json(), { error: 'invalid_json', request_id: null, retry: 'correct_request' });
     const invalidScope = await fetch(`${h.base}/v1/auth/challenges`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     assert.equal(invalidScope.status, 400);
     for (const path of ['/.env', '/package.json', '/src/service/store.ts', '/node_modules/viem/package.json', '/../.env']) {
       assert.equal((await fetch(`${h.base}${path}`)).status, 404, path);
     }
+  } finally {
+    await new Promise<void>((resolve, reject) => h.app.close(error => error ? reject(error) : resolve()));
+    h.store.close();
+  }
+});
+
+test('public API exposes encoding policy, readiness, bounded pagination, cohort, and evidence links', async () => {
+  const h = await runningApp();
+  const apiNow = Math.floor(Date.now() / 1000);
+  h.store.put('indexer', 'status', { indexed_through: apiNow - 1, synced_at: apiNow, error: null });
+  h.store.put('samples', requestId, {
+    request_id: requestId, agent_id: '1', schema: SCHEMA, price_feed_id: ETH_USD, payment_mode: 'x402', payment_status: 'verified',
+    payment_verified_at: apiNow - 1_000, payer: '0.0.1001', committed_at: apiNow - 1_000, target_time: apiNow - 500, revealed_at: apiNow - 400,
+    grade: null, oracle_status: 'unavailable', oracle_status_at: apiNow - 400, native_payment_id: '0.0.7162784@900.000000001',
+    transaction_hash: `0x${'33'.repeat(48)}`, commitment_hash: `0x${'44'.repeat(32)}`,
+  });
+  try {
+    const schema = await (await fetch(`${h.base}/v1/schema/${SCHEMA}`)).json() as any;
+    assert.equal(schema.encoding.version, '1');
+    assert.equal(schema.encoding.function, 'keccak256(abi.encode)');
+    assert.equal(schema.policy.reveal_grace_seconds, 300);
+
+    const health = await (await fetch(`${h.base}/health`)).json() as any;
+    assert.equal(health.liveness.status, 'ok');
+    assert.equal(health.readiness.scope, 'purchase_and_evidence_service');
+    assert.equal(typeof health.readiness.ready, 'boolean');
+    assert.equal(health.readiness.indexer.status, 'ready');
+
+    const discovery = await (await fetch(`${h.base}/v1/agents?offset=0&limit=1&allow_unproven=true`)).json() as any;
+    assert.equal(discovery.agents[0].payTo, '0.0.1002');
+    assert.equal(discovery.pagination.total, 1);
+    assert.equal(discovery.pagination.next_offset, null);
+    const invalidPage = await fetch(`${h.base}/v1/agents?limit=0`);
+    assert.equal(invalidPage.status, 400);
+    assert.equal((await invalidPage.json() as any).retry, 'correct_request');
+
+    const history = await (await fetch(`${h.base}/v1/agents/1/signals?offset=0&limit=1`)).json() as any;
+    assert.equal(history.samples[0].cohort_membership, 'eligible');
+    assert.match(history.samples[0].evidence_links.payment, /hashscan\.io\/testnet\/transaction/);
+    assert.match(history.samples[0].evidence_links.commitment, /hashscan\.io\/testnet\/transaction/);
+    assert.equal(history.pagination.limit, 1);
+
+    let limited: Response | undefined;
+    for (let attempt = 0; attempt < 121 && limited?.status !== 429; attempt++) limited = await fetch(`${h.base}/health`);
+    assert.equal(limited?.status, 429);
+    assert.equal((await limited!.json() as any).retry, 'retry_same_request');
   } finally {
     await new Promise<void>((resolve, reject) => h.app.close(error => error ? reject(error) : resolve()));
     h.store.close();

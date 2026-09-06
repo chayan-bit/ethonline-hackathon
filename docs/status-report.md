@@ -79,12 +79,12 @@ Payment, commitment, reveal, HCS audit, discovery, and UI evidence remain valid 
 ## Test and coverage boundary
 
 The current package scripts are `npm test`, `npm run test:contracts`, `npm run typecheck`, `npm run compile`, `npm run check`, and `npm run test:coverage`.
-The latest completed green `npm run check` passed 43 unit tests and 13 contract tests after a successful TypeScript typecheck.
+The latest completed green `npm run check` passed 46 unit tests and 13 contract tests after a successful TypeScript typecheck.
 The unit suite includes real ABI indexer replay with pagination, duplicate-event idempotence, exact native payment verification, captured-watermark enforcement, process-lock ownership, malformed remote discovery metadata, and persisted buyer recovery checks.
 
 `npm run test:coverage` now includes every protocol and service module and enforces at least 80% statement and line coverage.
-The latest coverage run reported 93.27% statement and line coverage overall, 92.07% for service modules, and 82.55% for the indexer, above the enforced 80% floor.
-The proposed secret-free GitHub Actions workflow runs `npm ci`, compiles contracts before artifact-dependent tests, then runs the complete check and enforced coverage gate.
+The latest coverage run reported 94.57% statement and line coverage overall, 93.78% for service modules, and 82.55% for the indexer, above the enforced 80% floor.
+The secret-free GitHub Actions workflow runs `npm ci`, compiles contracts before artifact-dependent tests, then runs the complete check and enforced coverage gate; the published baseline run passed.
 
 ## Browser QA boundary
 
@@ -105,13 +105,13 @@ The canonical indexer watermark is now verified by the final test run: all four 
 | P0 boundary | Current evidence | Remaining acceptance work |
 | --- | --- | --- |
 | Live oracle grade | Hermes fetches succeed, but the configured Hedera testnet Pyth contract rejects the proof with `InvalidWormholeVaa`. | Resolve the supported Pyth proof path and demonstrate one valid later grade after a reveal survived oracle unavailability. |
-| Required API contract | Public routes, OpenAPI, buyer recovery, and metrics are present. | Reconcile the final API against the spec's encoder/version and policy constants in the schema response, paginated discovery, explicit cohort/evidence links in history, separate liveness/readiness health, and request-scoped retry guidance in errors. |
-| Seller lifecycle and mapped acceptance | Registry authorization and mutation tests exist. | Provide end-to-end evidence or a documented operator CLI for register, delegate, update, and deactivate, then map AT-01 through AT-22 to runnable tests, live evidence, or observed UI behavior. |
-| Discovery and buyer journey | Single-provider policy filtering, reveal thresholds, bounded exploration, and current browser flow are evidenced. | Complete the final acceptance run for stale metrics, multi-provider selection reasons, pagination, recovery, and public no-leak behavior after the canonical indexer changes. |
+| Required API contract | The schema response exposes encoding and public policy, singleton P0 discovery and history are bounded and paginated, history includes cohort/evidence fields, health separates liveness/readiness, and errors include safe request/retry context. | Preserve the OpenAPI and HTTP regression test with the final release evidence. |
+| Seller lifecycle and mapped acceptance | Registry authorization and mutation tests exist, the AT matrix is documented, initial registration uses `npm run deploy`, and `npm run seller` provides status, dry-run, gateway/payee/metadata update, and activation/deactivation operations. Distinct owner/payee behavior is tested through `HEDERA_PAYEE_ID`. | Live adversarial lifecycle mutations remain intentionally unclaimed; use the documented owner CLI only when an exact mutation is intended, and keep the provider inactive across the two-transaction payee/metadata rotation window. |
+| Discovery and buyer journey | The P0 service intentionally has one provider; policy filtering, reveal thresholds, bounded exploration, pagination, recovery, stale/quality rejection fixtures, and public no-leak behavior are covered. | A live two-provider run remains P1 scope; AT-18 remains an explicit local deterministic fixture. |
 
 These are hard P0 boundaries from `requirements-spec.md`.
 Full A2A interoperability remains a deferred P1 or extra-credit capability because the current Agent Card is REST discovery metadata only.
-Permanent hosting, public repository creation, event publication, and the video are submission/package work.
+Permanent hosting, event publication, and the video are submission/package work.
 Subscription vault, scheduled checkpoints, and related financial automation are P1 and remain gated on P0.
 
 The package pins Hiero SDK `2.85.0` with patched gRPC, protobuf, WebSocket, and cryptography overrides.
@@ -119,7 +119,7 @@ The production npm audit is reported as zero findings after the overrides, with 
 
 ## Remaining submission gaps
 
-The public repository has not been created.
+The public repository is [chayan-bit/ethonline-hackathon](https://github.com/chayan-bit/ethonline-hackathon), and the baseline CI run passed.
 The hackathon event submission and video have not been created.
 The public service is temporary rather than a permanent deployment.
 Full A2A RPC interoperability is not implemented; the current Agent Card is REST metadata.

@@ -14,6 +14,7 @@
     "check": "npm run typecheck && npm test && npm run test:contracts",
     "start": "node --env-file=.env --import tsx src/server.ts",
     "buyer": "node --env-file=.env --import tsx src/buyer.ts",
+    "seller": "node --env-file=.env --import tsx scripts/seller.ts",
     "deploy": "node --env-file=.env --import tsx scripts/deploy.ts",
     "preflight": "node --env-file=.env --import tsx scripts/preflight.ts",
     "test:coverage": "c8 --all --include=src/protocol/**/*.ts --include=src/service/**/*.ts --check-coverage --statements=80 --lines=80 npm test"

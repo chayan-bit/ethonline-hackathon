@@ -8,7 +8,7 @@ This matrix maps AT-01 through AT-22 from [requirements-spec.md](../requirements
 
 | ID | Status | Current evidence | Exact remaining boundary |
 | --- | --- | --- | --- |
-| AT-01 | LOCAL-ONLY | `test/contracts/registry-ledger.test.ts:134` covers register, delegate, update, deactivate, and owner authorization. | No live owner lifecycle replay or documented operator CLI covers all four mutations. |
+| AT-01 | LOCAL-ONLY | `test/contracts/registry-ledger.test.ts:134` covers register, delegate, update, deactivate, and owner authorization; `npm run deploy` registers the configured provider and `npm run seller` provides status, dry-run, gateway/payee/metadata update, and activation controls. | No live adversarial owner lifecycle replay is claimed. |
 | AT-02 | LOCAL-ONLY | `test/contracts/registry-ledger.test.ts:169` and `test/unit/protocol.test.ts:14` cover the negative-return canonical hash and field/salt mismatch behavior. | No separate live submission evidence is required for this deterministic vector, but it remains local test evidence. |
 | AT-03 | PASS | The two public records in [live-api-snapshot.json](evidence/live-api-snapshot.json) show verified `0.001 HBAR` payments, delivered responses, commitments, and public request IDs. | Keep the linked transaction and buyer verification evidence with the final submission. |
 | AT-04 | LOCAL-ONLY | `test/unit/workflow.test.ts:50` verifies generation failure never settles. | No live failure injection is claimed. |
@@ -37,12 +37,12 @@ These are concrete P0 contract gaps identified by comparing the current source t
 
 | Required behavior | Current source boundary | Status |
 | --- | --- | --- |
-| Schema response includes encoder definition/version and public policy constants | `src/service/app.ts:102` returns `signalSchema` only. | MISSING from the response contract. |
-| Paginated discovery | `src/service/app.ts:109-113` exposes one local provider and no discovery page or cursor fields, although `src/protocol/discovery.ts` can select arrays. | MISSING from the HTTP discovery contract. |
-| History includes explicit cohort membership and evidence links | `src/service/app.ts:116-120` returns sample projections and an offset, but no explicit cohort-membership field or generated evidence-link object. | MISSING from the response contract. |
-| Separate liveness and readiness | `src/service/app.ts:98-100` returns `live` plus dependency flags, indexer state, and worker state, but no separate readiness result. | MISSING from the health contract. |
-| Request ID and safe retry guidance in errors | `src/service/app.ts:153-157` returns `{ error }` without a request ID or retry guidance. | MISSING from the error contract. |
-| Seller register/delegate/update/deactivate operator path | Contract authorization is tested, but `scripts/deploy.ts` documents deployment, registration, and metadata update only. | End-to-end operator evidence or a documented CLI is missing. |
+| Schema response includes encoder definition/version and public policy constants | `/v1/schema/defi.return_forecast.v1` preserves the JSON Schema and adds canonical ABI field order/types, encoding version, schema ID, distribution code, and policy constants. | IMPLEMENTED and covered by the HTTP contract test. |
+| Paginated discovery | `/v1/agents` applies bounded `offset` and `limit` fields to the configured P0 provider set and returns stable pagination metadata; a second provider remains P1. | IMPLEMENTED for the intentional singleton P0 registry boundary. |
+| History includes explicit cohort membership and evidence links | Agent history and signal detail add cohort membership plus payment, commitment, and available HCS evidence links without exposing private payloads. | IMPLEMENTED and covered by the HTTP/no-leak tests. |
+| Separate liveness and readiness | `/health` retains compatibility fields and adds separate `liveness` and dependency-level `readiness` state. | IMPLEMENTED and covered by the HTTP contract test. |
+| Request ID and safe retry guidance in errors | Error envelopes include a validated request ID when available and bounded guidance that distinguishes correction, new quote, same-request retry, and no replacement payment. | IMPLEMENTED and covered by the HTTP contract test. |
+| Seller register/delegate/update/deactivate operator path | `npm run deploy` owns initial registration; `npm run seller` provides read-only status, dry-run, gateway/payee/metadata update, and active-state mutation using the existing owner-signed contract adapter. `HEDERA_PAYEE_ID` supports a recipient distinct from the owner. | IMPLEMENTED as a documented CLI with a documented inactive rotation window; no live mutation is claimed. |
 
 The canonical safe-block indexer requirement is now covered by the final test evidence: all four canonical log sets must match Mirror before the cursor advances, including delayed-Mirror and hidden-reveal regressions.
 The live Pyth grade remains the external blocker that prevents a P0 completion claim even after these local and interface gaps are addressed.

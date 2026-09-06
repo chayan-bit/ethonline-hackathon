@@ -20,11 +20,11 @@ export class Ledger {
   get address(): Address { if (!this.config.ledgerAddress) throw new Error('ledger_not_deployed'); return this.config.ledgerAddress; }
 
   async seller() {
-    if (!this.config.registryAddress || !this.config.operatorId) throw new Error('registry_not_configured');
+    if (!this.config.registryAddress || !this.config.payeeId) throw new Error('registry_not_configured');
     const values = await this.client.readContract({ address: this.config.registryAddress, abi: artifact('AgentRegistry').abi, functionName: 'getAgent', args: [BigInt(this.config.agentId)] }) as readonly unknown[];
     const expectedHash = keccak256(stringToHex(JSON.stringify(providerMetadata(this.config))));
-    if (values[4] !== expectedHash || String(values[2]).toLowerCase() !== accountAddress(this.config.operatorId).toLowerCase()) throw new Error('registry_metadata_mismatch');
-    return { agent_id: this.config.agentId, payTo: this.config.operatorId, price: this.config.price, active: values[3] === true };
+    if (values[4] !== expectedHash || String(values[2]).toLowerCase() !== accountAddress(this.config.payeeId).toLowerCase()) throw new Error('registry_metadata_mismatch');
+    return { agent_id: this.config.agentId, payTo: this.config.payeeId, price: this.config.price, active: values[3] === true };
   }
 
   async commitment(id: string) {

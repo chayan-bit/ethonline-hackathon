@@ -44,7 +44,7 @@ paths:
       summary: Canonical signal JSON Schema
       responses:
         '200':
-          description: JSON Schema for the public signal payload
+          description: JSON Schema plus canonical encoder version and public policy constants
           content:
             application/json:
               schema:
@@ -78,6 +78,8 @@ paths:
         - $ref: '#/components/parameters/MaxMaeBps'
         - $ref: '#/components/parameters/MinGradeCoveragePct'
         - $ref: '#/components/parameters/MinHitRatePct'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
           description: Provider list, policy, selected provider, and rejection reasons
@@ -107,12 +109,8 @@ paths:
       summary: Paginated public signal evidence
       parameters:
         - $ref: '#/components/parameters/AgentId'
-        - name: offset
-          in: query
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
       responses:
         '200':
           description: Public commitment, payment, reveal, and grade evidence
@@ -120,7 +118,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [samples, next_offset]
+                required: [samples, next_offset, pagination]
                 properties:
                   samples:
                     type: array
@@ -131,6 +129,8 @@ paths:
                       - type: integer
                         minimum: 0
                       - type: 'null'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
         '400':
           $ref: '#/components/responses/BadRequest'
   /v1/signals/{request_id}:
@@ -277,6 +277,21 @@ paths:
           $ref: '#/components/responses/NotFound'
 components:
   parameters:
+    Offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
     AgentId:
       name: agent_id
       in: path
@@ -382,16 +397,31 @@ components:
   schemas:
     Error:
       type: object
-      required: [error]
+      required: [error, request_id, retry]
       properties:
         error:
           type: string
+        request_id:
+          type: [string, 'null']
+        retry:
+          type: string
+          enum: [correct_request, request_new_quote, retry_same_request, do_not_create_replacement_payment]
     Health:
       type: object
-      required: [live, network, contracts_configured, oracle_api_configured, indexer, worker_enabled]
+      required: [live, liveness, readiness, network, contracts_configured, oracle_api_configured, indexer, worker_enabled]
       properties:
         live:
           type: boolean
+        liveness:
+          type: object
+          required: [status]
+          properties:
+            status: { type: string, const: ok }
+        readiness:
+          type: object
+          description: Service readiness for purchase and evidence APIs; oracle grading compatibility remains a separate external preflight gate.
+          required: [ready, contracts, indexer, worker, oracle]
+          additionalProperties: true
         network:
           type: string
           const: hedera:testnet
@@ -505,6 +535,7 @@ components:
             active: { type: boolean }
             registry_error: { type: [string, 'null'] }
             metrics: { $ref: '#/components/schemas/Metrics' }
+            evidence_links: { type: object, additionalProperties: { type: [string, 'null'] } }
     DiscoveryPolicy:
       type: object
       required: [min_samples, min_reveal_pct, max_price, allow_unproven]
@@ -519,7 +550,7 @@ components:
         min_hit_rate_pct: { type: [number, 'null'] }
     DiscoveryResponse:
       type: object
-      required: [agents, policy, selected_agent_id, decisions, status]
+      required: [agents, policy, selected_agent_id, decisions, status, pagination]
       properties:
         agents:
           type: array
@@ -537,6 +568,15 @@ components:
                 type: array
                 items: { type: string }
         status: { type: string, enum: [selected, no_eligible_provider] }
+        pagination: { $ref: '#/components/schemas/Pagination' }
+    Pagination:
+      type: object
+      required: [offset, limit, total, next_offset]
+      properties:
+        offset: { type: integer, minimum: 0 }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        total: { type: integer, minimum: 0 }
+        next_offset: { type: [integer, 'null'], minimum: 0 }
     BuyRequest:
       type: object
       additionalProperties: false
@@ -657,7 +697,7 @@ components:
         error: { type: [string, 'null'] }
     SampleEvidence:
       type: object
-      required: [request_id, agent_id, schema, price_feed_id, payment_mode, payment_status, payer, committed_at, target_time, revealed_at, grade, oracle_status]
+      required: [request_id, agent_id, schema, price_feed_id, payment_mode, payment_status, payer, committed_at, target_time, revealed_at, grade, oracle_status, cohort_membership, evidence_links]
       properties:
         request_id: { type: string }
         agent_id: { type: string }
@@ -673,6 +713,8 @@ components:
         grade: { type: [object, 'null'], additionalProperties: true }
         oracle_status: { type: string, enum: [pending, excluded, unavailable] }
         oracle_status_at: { type: [integer, 'null'] }
+        cohort_membership: { type: string, enum: [eligible, pending_expiry_or_grace, outside_30_day_window, payment_pending, invalid_payment] }
+        evidence_links: { type: object, additionalProperties: { type: [string, 'null'] } }
         payment_ref: { type: string }
         commitment_hash: { type: string }
         transaction_hash: { type: string }
