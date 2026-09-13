@@ -13,9 +13,5 @@ services:
         sync: false
       - key: HEDERA_OPERATOR_KEY
         sync: false
-      - key: HEDERA_BUYER_ID
-        sync: false
-      - key: HEDERA_BUYER_KEY
-        sync: false
       - key: PYTH_API_KEY
         sync: false
