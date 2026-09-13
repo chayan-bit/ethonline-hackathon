@@ -121,11 +121,11 @@ docs/        API, acceptance matrix, demo, live evidence and honest limitations
 ## Verification
 
 ```sh
-npm run check          # typecheck + unit + contract tests
+npm run check          # typecheck + unit + contract + UI checks
 npm run test:coverage  # enforced 80% statement and line floor
 ```
 
-Latest verified local result: **109 unit tests + 31 contract tests passing**, with **94.48%** statement and line coverage. Sourcify reports exact runtime matches for the registry and ledger; creation-bytecode matches remain unclaimed. See the [acceptance matrix](docs/acceptance.md) and [status report](docs/status-report.md) for the evidence boundary.
+Latest verified local result: **109 unit tests + 31 contract tests passing**, plus **10 UI contract checks**, with **94.48%** statement and line coverage. Sourcify reports exact runtime matches for the registry and ledger; creation-bytecode matches remain unclaimed. See the [acceptance matrix](docs/acceptance.md) and [status report](docs/status-report.md) for the evidence boundary.
 
 ## Hackathon disclosure
 

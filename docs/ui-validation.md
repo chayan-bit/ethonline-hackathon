@@ -1,28 +1,24 @@
 # Public UI validation
 
-Validation date: 6 September 2026.
-Target: [temporary public quick tunnel](https://valium-meant-atomic-articles.trycloudflare.com).
+Validation date: 13 September 2026.
+Target: [temporary public quick tunnel](https://leader-descriptions-announcements-seat.trycloudflare.com).
 
-The current public flow passed a fresh browser check after the canonical indexer restart.
-The page reported fresh evidence, three eligible paid samples, three revealed samples, `100%` reveal coverage, one grade, `33.3%` grade coverage, and the expected default rejection at a five-sample minimum.
-The final browser policy check used minimum reveal `100%`, minimum samples `3`, and maximum price `0.001 HBAR`; it selected ETH Momentum despite `33.3%` grade coverage and `0.0%` directional hit rate.
-The selected current request was `0x10d7ceb8b712edbe1738d0405e3b9b448610642353af3b4e672ca11b4a5158dc`.
+The final interface uses a light evidence-ledger system: editorial typography, a horizontal product header, one proof ribbon for the verified lifecycle, a dense buyer-policy workbench, a ledger-style history table, and a connected protocol sequence. The system uses restrained entrance and dialog transitions and provides a `prefers-reduced-motion` fallback.
 
-At the measured 386px mobile viewport, the document width matched the viewport and only the evidence table used horizontal scrolling.
-The latest browser runtime did not honor requested 739px or 1280px viewport overrides, so this record does not claim current validation at those widths.
-The final mobile capture reported viewport width `386` and document `scrollWidth` `386`, with no horizontal overflow.
+## Browser acceptance
 
-The maximum-price field rejected a value with nine HBAR decimal places through native form validation.
-Rapid minimum-sample changes from `2` to `5` to `2` settled on the latest request and selected the provider under the final policy.
-Raw public evidence expanded successfully.
+- Desktop passed at `1440 × 900`: the hero, proof ribbon, live statistics, provider workbench, activity timeline, protocol view, and evidence dialogs render with no document-level horizontal overflow.
+- Mobile passed at `390 × 844`: the document width remains `390px`; the evidence table alone scrolls horizontally by design.
+- The provider, all three public history rows, and the current grade remain available when the Mirror snapshot is stale. Policy selection fails closed while evidence stays inspectable.
+- View changes return to the top of the document with smooth motion, or immediate motion when the operating system requests reduced animation.
+- Native focus outlines, skip navigation, labeled controls, status regions, dialog focus restoration, and minimum touch targets remain present.
+- The browser loaded the intended IBM Plex family and reported the light color scheme.
+- The console showed no application errors during Discover, Network activity, or Protocol checks.
 
-The two legacy history rows displayed `Revealed` in the reveal-state column and `Oracle unavailable` in the separate quality column.
-The current-ledger history row displayed `Revealed` with its separate grade evidence.
-The current signal evidence dialog displayed prediction `-3` bps, actual `-17` bps, and absolute error `14` bps, preserving the protocol distinction between disclosure and grading.
-The current record displayed working payment, commitment, reveal, and grade evidence links.
+## Evidence and interaction checks
 
-After more than one 15-second auto-refresh cycle, closing the provider dialog restored focus to the current `Inspect provider` button.
-Closing a signal evidence dialog after auto-refresh likewise restored focus to the current matching `Inspect` button rather than the removed opener or document body.
+The public flow reports three eligible paid forecasts, three reveals, `100%` reveal coverage, and one current-ledger grade. The graded record shows prediction `-3` bps, actual return `-17` bps, and absolute error `14` bps. The two legacy rows remain `Revealed` with the separate quality state `Oracle unavailable`.
 
-No additional paid request was created during this browser validation.
-The public URL remains a temporary tunnel, the current grade is verified on the receipt-backed ledger, and the two legacy records remain blocked by the recorded Pyth `InvalidWormholeVaa` incompatibility.
+The maximum-price field uses native HBAR precision validation. Rapid policy refreshes keep only the latest response, and closing a refreshed detail dialog restores focus to its matching action. No paid request was created during this validation.
+
+The public URL remains a temporary tunnel. The current grade is receipt-backed, while the two legacy records remain blocked by the recorded Pyth `InvalidWormholeVaa` incompatibility.

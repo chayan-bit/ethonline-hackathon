@@ -766,7 +766,7 @@ async function loadHistory() {
   }
 }
 
-function navigate() {
+function navigate(event) {
   const selected = ["discover", "activity", "protocol"].includes(
     location.hash.slice(1),
   )
@@ -778,6 +778,13 @@ function navigate() {
     link.classList.toggle("active", link.dataset.view === selected);
   $("breadcrumb").textContent =
     `Signal Market / ${selected === "discover" ? "Discover" : selected === "activity" ? "Network activity" : "Protocol"}`;
+  if (event?.type === "hashchange")
+    window.scrollTo({
+      top: 0,
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+    });
 }
 
 $("filters").addEventListener("submit", (event) => {

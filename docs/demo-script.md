@@ -16,7 +16,7 @@ macOS: press `Shift–Command–5`, choose **Record Entire Screen**, select your
 
 ### 0:00–0:20 — Hook
 
-**Show:** Marketplace hero and live metrics.
+**Show:** Marketplace hero, then trace the payment → commitment → disclosure → oracle proof ribbon.
 
 **Say:**
 

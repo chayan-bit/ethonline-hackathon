@@ -73,10 +73,15 @@ assert.match(
   /prefers-reduced-motion:\s*reduce/,
   "motion has an accessibility fallback",
 );
+assert.match(
+  source,
+  /event\?\.type === "hashchange"[\s\S]*prefers-reduced-motion: reduce/,
+  "view navigation returns to the top without forcing motion",
+);
 assert.doesNotMatch(
   source + markup,
   /↗/,
   "interaction labels do not use decorative arrow clutter",
 );
 
-console.log("UI checks: 9/9 passed");
+console.log("UI checks: 10/10 passed");
