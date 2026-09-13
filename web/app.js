@@ -253,7 +253,7 @@ function renderX402Provider(agent, reasons) {
   const footer = node("div", "", "provider-footer");
   const price = node("div", formatHbar(agent.price), "price");
   price.append(node("span", "/ forecast"));
-  const inspect = node("button", "Inspect provider ↗", "secondary");
+  const inspect = node("button", "Inspect provider", "secondary");
   inspect.type = "button";
   inspect.dataset.detailFocus = `provider:${agent.agent_id}`;
   inspect.addEventListener("click", () =>
@@ -466,13 +466,10 @@ function providerDetail(agent, focusKey) {
       ["Oracle excluded", String(m.oracle_excluded_count)],
       ["Pricing", `${formatHbar(agent.price)} per forecast`],
       ["Distribution", "Non-exclusive"],
-      [
-        "Metadata",
-        link("Verified metadata ↗", `/v1/metadata/${agent.agent_id}`),
-      ],
+      ["Metadata", link("Verified metadata", `/v1/metadata/${agent.agent_id}`)],
       [
         "Metrics",
-        link("Machine-readable metrics ↗", `/v1/agents/${agent.agent_id}`),
+        link("Machine-readable metrics", `/v1/agents/${agent.agent_id}`),
       ],
     ],
     m,
@@ -503,8 +500,8 @@ function signalDetail(sample, focusKey) {
     ["Expires", date(sample.target_time)],
     ["Reveal", sample.revealed_at ? date(sample.revealed_at) : "Not revealed"],
     ["Grade", sampleQuality(sample)],
-    ["Payment", txLink("View transfer ↗", sample.native_payment_id)],
-    ["Commitment", txLink("View commitment ↗", sample.transaction_hash)],
+    ["Payment", txLink("View transfer", sample.native_payment_id)],
+    ["Commitment", txLink("View commitment", sample.transaction_hash)],
   ];
   const predictedReturn = sample.reveal?.signal?.predictedReturnBps;
   if (predictedReturn !== undefined)
@@ -543,7 +540,7 @@ function renderHistory(samples, nextOffset, mode = "x402") {
       node("span", state, state === "Revealed" ? "badge good" : "badge"),
     );
     const evidence = node("td");
-    const button = node("button", "Inspect ↗", "secondary");
+    const button = node("button", "Inspect", "secondary");
     button.type = "button";
     button.dataset.detailFocus = `history:${sample.request_id}`;
     button.addEventListener("click", () =>
@@ -604,9 +601,9 @@ function renderActivity(activity, mode = "x402") {
       ),
     );
     if (purchase.payment_ref)
-      item.append(txLink("Payment ↗", purchase.payment_ref));
+      item.append(txLink("Payment", purchase.payment_ref));
     if (purchase.commitment_transaction_id)
-      item.append(txLink("Commitment ↗", purchase.commitment_transaction_id));
+      item.append(txLink("Commitment", purchase.commitment_transaction_id));
     const sample = currentSamples.find(
       (s) => s.request_id === purchase.request_id,
     );
@@ -694,6 +691,9 @@ async function refresh() {
       $("policy-result").textContent = currentSubscriptionAgent
         ? "Selected cohort: subscription. Sampled outputs remain separate from x402 history."
         : "No subscription cohort is available for this service.";
+      $("policy-result").dataset.state = currentSubscriptionAgent
+        ? "selected"
+        : "blocked";
     } else {
       $("freshness").textContent = m.is_stale
         ? "Indexer catching up · stale evidence"
@@ -701,6 +701,9 @@ async function refresh() {
       $("policy-result").textContent = reasons.length
         ? `No provider meets this policy: ${reasons.map(label).join(", ")}.`
         : "Selected cohort: x402. Buyer policy selects ETH Momentum.";
+      $("policy-result").dataset.state = reasons.length
+        ? "blocked"
+        : "selected";
       if ($("allow-unproven").checked)
         $("policy-result").textContent +=
           " Exploratory purchases are explicitly enabled.";

@@ -649,6 +649,10 @@ input[type="checkbox"] {
   content: "";
 }
 
+.policy-result[data-state="selected"]::before {
+  background: var(--green);
+}
+
 .error {
   padding: 13px 16px;
   margin-bottom: 18px;
