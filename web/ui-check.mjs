@@ -3,6 +3,8 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 const source = await readFile(new URL("./app.js", import.meta.url), "utf8");
+const markup = await readFile(new URL("./index.html", import.meta.url), "utf8");
+const styles = await readFile(new URL("./style.css", import.meta.url), "utf8");
 const functionLine = source
   .split("\n")
   .find((line) => line.startsWith("function updateOracleNotice("));
@@ -63,4 +65,18 @@ runCase(
   { hidden: false, title: "Oracle status could not be loaded" },
 );
 
-console.log("oracle notice checks: 4/4 passed");
+assert.match(markup, /class="proof-ribbon"/, "proof lifecycle is visible");
+assert.match(markup, /content="#f6f7f2"/, "browser chrome uses light theme");
+assert.match(styles, /color-scheme:\s*light/, "light color scheme is declared");
+assert.match(
+  styles,
+  /prefers-reduced-motion:\s*reduce/,
+  "motion has an accessibility fallback",
+);
+assert.doesNotMatch(
+  source + markup,
+  /↗/,
+  "interaction labels do not use decorative arrow clutter",
+);
+
+console.log("UI checks: 9/9 passed");

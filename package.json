@@ -9,9 +9,10 @@
   "scripts": {
     "test": "node --import tsx --test test/unit/*.test.ts",
     "test:contracts": "hardhat test",
+    "test:ui": "node web/ui-check.mjs",
     "typecheck": "tsc --noEmit",
     "compile": "hardhat compile",
-    "check": "npm run typecheck && npm test && npm run test:contracts",
+    "check": "npm run typecheck && npm test && npm run test:contracts && npm run test:ui",
     "start": "node --env-file=.env --import tsx src/server.ts",
     "buyer": "node --env-file=.env --import tsx src/buyer.ts",
     "seller": "node --env-file=.env --import tsx scripts/seller.ts",
