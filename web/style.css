@@ -539,6 +539,382 @@ footer {
   }
 }
 
+.filter-bar {
+  display: grid;
+  grid-template-columns:
+    minmax(170px, 1.4fr) repeat(3, minmax(120px, 0.8fr)) minmax(170px, 1fr)
+    auto;
+  gap: 0;
+  align-items: stretch;
+  border: 1px solid var(--ink);
+  background: var(--white);
+}
+
+.filter-bar > label {
+  display: flex;
+  min-width: 0;
+  min-height: 78px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  padding: 12px 16px;
+  border-right: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.filter-bar input[type="number"],
+.filter-bar input[type="text"],
+.filter-bar select,
+.subscription-inspector input {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.filter-bar select {
+  appearance: auto;
+}
+
+.input-unit {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-unit input {
+  padding-right: 42px !important;
+}
+
+.input-unit span {
+  position: absolute;
+  right: 0;
+  color: var(--faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  pointer-events: none;
+}
+
+.filter-bar small {
+  display: none;
+}
+
+.filter-bar .checkbox-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 9px;
+  white-space: nowrap;
+}
+
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--green);
+}
+
+.filter-bar button {
+  min-width: 128px;
+  min-height: 78px;
+  border: 0;
+}
+
+.mode-policy-note,
+.policy-result {
+  min-height: 42px;
+  padding: 12px 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.policy-result {
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.policy-result::before {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--amber);
+  content: "";
+}
+
+.error {
+  padding: 13px 16px;
+  margin-bottom: 18px;
+  border-left: 3px solid var(--red);
+  background: #fff0ee;
+  color: var(--red);
+  font-size: 12px;
+}
+
+.provider-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.provider-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.85fr) minmax(420px, 1.4fr);
+  gap: 30px 54px;
+  padding: 32px;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-top: 3px solid var(--green);
+  background: var(--white);
+  box-shadow: var(--shadow);
+}
+
+.provider-card::after {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 150px;
+  height: 150px;
+  border: 32px solid var(--green-pale);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.provider-top,
+.provider-description,
+.tags,
+.provider-footer,
+.subscription-identity,
+.subscription-inspector,
+.subscription-terms,
+.subscription-empty {
+  grid-column: 1;
+}
+
+.provider-top {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 13px;
+  align-items: center;
+}
+
+.provider-avatar {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--ink);
+  color: var(--green-dark);
+  font-family: "IBM Plex Sans Condensed", sans-serif;
+  font-size: 22px;
+}
+
+.provider-name h3 {
+  font-family: "IBM Plex Sans Condensed", sans-serif;
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.provider-name p {
+  margin-top: 2px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+}
+
+.provider-top > .badge {
+  position: absolute;
+  z-index: 1;
+  top: 28px;
+  right: 30px;
+}
+
+.provider-description {
+  margin-top: -12px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: -16px;
+}
+
+.tag,
+.badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid var(--line-strong);
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+}
+
+.badge.good {
+  border-color: #85b99a;
+  background: var(--green-pale);
+  color: var(--green-dark);
+}
+
+.provider-metrics {
+  display: grid;
+  grid-row: 1 / span 4;
+  grid-column: 2;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-self: stretch;
+  border-left: 1px solid var(--line);
+}
+
+.provider-metrics > div {
+  min-width: 0;
+  padding: 15px 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+.provider-metrics > div:nth-child(odd) {
+  border-right: 1px solid var(--line);
+}
+
+.provider-metrics > div:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+.provider-metrics small,
+.provider-metrics span {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.provider-metrics strong {
+  display: block;
+  margin: 8px 0 5px;
+  font-family: "IBM Plex Sans Condensed", sans-serif;
+  font-size: 27px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.provider-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.price {
+  font-family: "IBM Plex Sans Condensed", sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.price span {
+  margin-left: 4px;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.footnote {
+  display: flex;
+  gap: 10px;
+  max-width: 900px;
+  padding: 18px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.footnote > span {
+  color: var(--green);
+}
+
+.subscription-card {
+  border-top-color: var(--blue);
+}
+
+.subscription-identity,
+.subscription-inspector,
+.subscription-terms {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.subscription-identity h4,
+.subscription-terms h4,
+.subscription-inspector label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.subscription-identity p,
+.subscription-identity small,
+.subscription-inspector small,
+.subscription-empty {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.subscription-inspector-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.subscription-inspector input {
+  padding: 9px 10px;
+  border: 1px solid var(--line-strong);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+}
+
+.subscription-terms dl {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 8px 14px;
+  margin: 0;
+  font-size: 10px;
+}
+
+.subscription-terms dt {
+  color: var(--muted);
+}
+
+.subscription-terms dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.atomic-value {
+  display: flex;
+  flex-direction: column;
+}
+
+.atomic-value small {
+  color: var(--faint);
+  font-size: 8px;
+}
+
 .topbar div span {
   margin: 0 8px;
   color: var(--line-strong);
