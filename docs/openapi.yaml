@@ -9,7 +9,7 @@ info:
 servers:
   - url: http://127.0.0.1:3000
     description: Local service
-  - url: https://valium-meant-atomic-articles.trycloudflare.com
+  - url: https://leader-descriptions-announcements-seat.trycloudflare.com
     description: Temporary public quick tunnel
 tags:
   - name: public
@@ -21,29 +21,29 @@ paths:
       tags: [public]
       summary: Process and dependency status
       responses:
-        '200':
+        "200":
           description: Liveness and current dependency state
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Health'
+                $ref: "#/components/schemas/Health"
   /.well-known/agent-card.json:
     get:
       tags: [public]
       summary: REST discovery card
       responses:
-        '200':
+        "200":
           description: Public agent card and metadata
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AgentCard'
+                $ref: "#/components/schemas/AgentCard"
   /v1/schema/defi.return_forecast.v1:
     get:
       tags: [public]
       summary: Canonical signal JSON Schema
       responses:
-        '200':
+        "200":
           description: JSON Schema plus canonical encoder version and public policy constants
           content:
             application/json:
@@ -55,64 +55,64 @@ paths:
       tags: [public]
       summary: Registry metadata projection
       parameters:
-        - $ref: '#/components/parameters/AgentId'
+        - $ref: "#/components/parameters/AgentId"
       responses:
-        '200':
+        "200":
           description: Seller metadata and public payment capabilities
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProviderMetadata'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/ProviderMetadata"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /v1/agents:
     get:
       tags: [public]
       summary: Filtered discovery and buyer selection result
       parameters:
-        - $ref: '#/components/parameters/MinSamples'
-        - $ref: '#/components/parameters/MinRevealPct'
-        - $ref: '#/components/parameters/MaxPrice'
-        - $ref: '#/components/parameters/AllowUnproven'
-        - $ref: '#/components/parameters/Feed'
-        - $ref: '#/components/parameters/MaxMaeBps'
-        - $ref: '#/components/parameters/MinGradeCoveragePct'
-        - $ref: '#/components/parameters/MinHitRatePct'
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
+        - $ref: "#/components/parameters/MinSamples"
+        - $ref: "#/components/parameters/MinRevealPct"
+        - $ref: "#/components/parameters/MaxPrice"
+        - $ref: "#/components/parameters/AllowUnproven"
+        - $ref: "#/components/parameters/Feed"
+        - $ref: "#/components/parameters/MaxMaeBps"
+        - $ref: "#/components/parameters/MinGradeCoveragePct"
+        - $ref: "#/components/parameters/MinHitRatePct"
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
-        '200':
+        "200":
           description: Provider list, policy, selected provider, and rejection reasons
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DiscoveryResponse'
+                $ref: "#/components/schemas/DiscoveryResponse"
   /v1/agents/{agent_id}:
     get:
       tags: [public]
       summary: One provider with computed metrics
       parameters:
-        - $ref: '#/components/parameters/AgentId'
-        - $ref: '#/components/parameters/Feed'
+        - $ref: "#/components/parameters/AgentId"
+        - $ref: "#/components/parameters/Feed"
       responses:
-        '200':
+        "200":
           description: Provider metadata and indexer-derived metrics
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Provider'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/Provider"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /v1/agents/{agent_id}/signals:
     get:
       tags: [public]
       summary: Paginated public signal evidence
       parameters:
-        - $ref: '#/components/parameters/AgentId'
-        - $ref: '#/components/parameters/Offset'
-        - $ref: '#/components/parameters/Limit'
+        - $ref: "#/components/parameters/AgentId"
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
       responses:
-        '200':
+        "200":
           description: Public commitment, payment, reveal, and grade evidence
           content:
             application/json:
@@ -123,37 +123,37 @@ paths:
                   samples:
                     type: array
                     items:
-                      $ref: '#/components/schemas/SampleEvidence'
+                      $ref: "#/components/schemas/SampleEvidence"
                   next_offset:
                     oneOf:
                       - type: integer
                         minimum: 0
-                      - type: 'null'
+                      - type: "null"
                   pagination:
-                    $ref: '#/components/schemas/Pagination'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                    $ref: "#/components/schemas/Pagination"
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /v1/signals/{request_id}:
     get:
       tags: [public]
       summary: One public signal evidence record
       parameters:
-        - $ref: '#/components/parameters/RequestId'
+        - $ref: "#/components/parameters/RequestId"
       responses:
-        '200':
+        "200":
           description: Public evidence; payload fields appear only after public reveal
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SampleEvidence'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/SampleEvidence"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /v1/activity:
     get:
       tags: [public]
       summary: Public buyer activity projection
       responses:
-        '200':
+        "200":
           description: Delivery states and background evidence jobs
           content:
             application/json:
@@ -164,7 +164,7 @@ paths:
                   purchases:
                     type: array
                     items:
-                      $ref: '#/components/schemas/PublicPurchase'
+                      $ref: "#/components/schemas/PublicPurchase"
                   jobs:
                     type: array
                     items:
@@ -180,16 +180,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AuthScope'
+              $ref: "#/components/schemas/AuthScope"
       responses:
-        '200':
+        "200":
           description: Challenge message to sign with the buyer account key
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Challenge'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                $ref: "#/components/schemas/Challenge"
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /v1/signals:
     post:
       tags: [purchase]
@@ -204,12 +204,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BuyRequest'
+              $ref: "#/components/schemas/BuyRequest"
       parameters:
-        - $ref: '#/components/parameters/WalletProof'
-        - $ref: '#/components/parameters/PaymentSignature'
+        - $ref: "#/components/parameters/WalletProof"
+        - $ref: "#/components/parameters/PaymentSignature"
       responses:
-        '200':
+        "200":
           description: Delivered paid response, authenticated by the buyer proof
           headers:
             PAYMENT-RESPONSE:
@@ -220,14 +220,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Purchase'
-        '202':
+                $ref: "#/components/schemas/Purchase"
+        "202":
           description: Original payment or commitment is still being reconciled
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Purchase'
-        '402':
+                $ref: "#/components/schemas/Purchase"
+        "402":
           description: x402 v2 requirements and bound quote
           headers:
             PAYMENT-REQUIRED:
@@ -249,32 +249,32 @@ paths:
                   accepts:
                     type: array
                     items:
-                      $ref: '#/components/schemas/PaymentRequirements'
+                      $ref: "#/components/schemas/PaymentRequirements"
                   quote:
-                    $ref: '#/components/schemas/Quote'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                    $ref: "#/components/schemas/Quote"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /v1/purchases/{request_id}:
     get:
       tags: [purchase]
       summary: Recover the original paid response or workflow state
       description: Requires the buyer's request-scoped X-Wallet-Proof and never creates a replacement payment.
       parameters:
-        - $ref: '#/components/parameters/RequestId'
-        - $ref: '#/components/parameters/WalletProof'
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/WalletProof"
       responses:
-        '200':
+        "200":
           description: Original persisted purchase state
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Purchase'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/Purchase"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 components:
   parameters:
     Offset:
@@ -298,14 +298,14 @@ components:
       required: true
       schema:
         type: string
-        pattern: '^[1-9][0-9]{0,77}$'
+        pattern: "^[1-9][0-9]{0,77}$"
     RequestId:
       name: request_id
       in: path
       required: true
       schema:
         type: string
-        pattern: '^0x[0-9a-f]{64}$'
+        pattern: "^0x[0-9a-f]{64}$"
     Feed:
       name: feed
       in: query
@@ -331,8 +331,8 @@ components:
       in: query
       schema:
         type: string
-        pattern: '^[0-9]+$'
-        default: '10000000'
+        pattern: "^[0-9]+$"
+        default: "10000000"
     AllowUnproven:
       name: allow_unproven
       in: query
@@ -381,19 +381,19 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
     Unauthorized:
       description: Missing or invalid wallet proof
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
     NotFound:
       description: Resource not found
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
   schemas:
     Error:
       type: object
@@ -402,13 +402,29 @@ components:
         error:
           type: string
         request_id:
-          type: [string, 'null']
+          type: [string, "null"]
         retry:
           type: string
-          enum: [correct_request, request_new_quote, retry_same_request, do_not_create_replacement_payment]
+          enum:
+            [
+              correct_request,
+              request_new_quote,
+              retry_same_request,
+              do_not_create_replacement_payment,
+            ]
     Health:
       type: object
-      required: [live, liveness, readiness, network, contracts_configured, oracle_api_configured, indexer, worker_enabled]
+      required:
+        [
+          live,
+          liveness,
+          readiness,
+          network,
+          contracts_configured,
+          oracle_api_configured,
+          indexer,
+          worker_enabled,
+        ]
       properties:
         live:
           type: boolean
@@ -430,13 +446,23 @@ components:
         oracle_api_configured:
           type: boolean
         indexer:
-          type: [object, 'null']
+          type: [object, "null"]
           additionalProperties: true
         worker_enabled:
           type: boolean
     AgentCard:
       type: object
-      required: [name, url, version, capabilities, defaultInputModes, defaultOutputModes, skills, metadata]
+      required:
+        [
+          name,
+          url,
+          version,
+          capabilities,
+          defaultInputModes,
+          defaultOutputModes,
+          skills,
+          metadata,
+        ]
       properties:
         name:
           type: string
@@ -462,10 +488,24 @@ components:
             type: object
             additionalProperties: true
         metadata:
-          $ref: '#/components/schemas/ProviderMetadata'
+          $ref: "#/components/schemas/ProviderMetadata"
     ProviderMetadata:
       type: object
-      required: [agent_id, name, schema, model_version, distribution, endpoint, network, asset, price, payTo, payment_modes, feed_ids]
+      required:
+        [
+          agent_id,
+          name,
+          schema,
+          model_version,
+          distribution,
+          endpoint,
+          network,
+          asset,
+          price,
+          payTo,
+          payment_modes,
+          feed_ids,
+        ]
       properties:
         agent_id: { type: string }
         name: { type: string }
@@ -476,8 +516,8 @@ components:
         endpoint: { type: string, format: uri }
         agent_card_url: { type: string, format: uri }
         network: { type: string, const: hedera:testnet }
-        asset: { type: string, const: '0.0.0' }
-        price: { type: string, pattern: '^[0-9]+$' }
+        asset: { type: string, const: "0.0.0" }
+        price: { type: string, pattern: "^[0-9]+$" }
         payTo: { type: string }
         payment_modes:
           type: array
@@ -491,12 +531,27 @@ components:
         protocol_fee_pct: { type: number }
     Metrics:
       type: object
-      required: [metric_version, schema, payment_mode, eligible_paid_count, revealed_count, unrevealed_count, reveal_pct, graded_count, grade_coverage_pct, history_status, indexed_through, computed_at, is_stale]
+      required:
+        [
+          metric_version,
+          schema,
+          payment_mode,
+          eligible_paid_count,
+          revealed_count,
+          unrevealed_count,
+          reveal_pct,
+          graded_count,
+          grade_coverage_pct,
+          history_status,
+          indexed_through,
+          computed_at,
+          is_stale,
+        ]
       properties:
         metric_version: { type: string }
         schema: { type: string }
         payment_mode: { type: string, const: x402 }
-        feed_filter: { type: [string, 'null'] }
+        feed_filter: { type: [string, "null"] }
         horizon_filter: { type: object, additionalProperties: true }
         window_start: { type: integer }
         window_end: { type: integer }
@@ -508,11 +563,11 @@ components:
         eligible_paid_count: { type: integer }
         revealed_count: { type: integer }
         unrevealed_count: { type: integer }
-        reveal_pct: { type: [number, 'null'] }
+        reveal_pct: { type: [number, "null"] }
         graded_count: { type: integer }
-        grade_coverage_pct: { type: [number, 'null'] }
-        directional_hit_rate_pct: { type: [number, 'null'] }
-        mean_absolute_error_bps: { type: [number, 'null'] }
+        grade_coverage_pct: { type: [number, "null"] }
+        directional_hit_rate_pct: { type: [number, "null"] }
+        mean_absolute_error_bps: { type: [number, "null"] }
         oracle_excluded_count: { type: integer }
         oracle_unavailable_count: { type: integer }
         grade_pending_count: { type: integer }
@@ -520,22 +575,24 @@ components:
         pending_expiry_or_grace_count: { type: integer }
         payment_verification_pending_count: { type: integer }
         invalid_payment_reference_count: { type: integer }
-        history_status: { type: string, enum: [insufficient_history, available] }
-        lifetime: { $ref: '#/components/schemas/MetricsSummary' }
+        history_status:
+          { type: string, enum: [insufficient_history, available] }
+        lifetime: { $ref: "#/components/schemas/MetricsSummary" }
         evidence_url: { type: string }
     MetricsSummary:
       type: object
       additionalProperties: true
     Provider:
       allOf:
-        - $ref: '#/components/schemas/ProviderMetadata'
+        - $ref: "#/components/schemas/ProviderMetadata"
         - type: object
           required: [active, metrics]
           properties:
             active: { type: boolean }
-            registry_error: { type: [string, 'null'] }
-            metrics: { $ref: '#/components/schemas/Metrics' }
-            evidence_links: { type: object, additionalProperties: { type: [string, 'null'] } }
+            registry_error: { type: [string, "null"] }
+            metrics: { $ref: "#/components/schemas/Metrics" }
+            evidence_links:
+              { type: object, additionalProperties: { type: [string, "null"] } }
     DiscoveryPolicy:
       type: object
       required: [min_samples, min_reveal_pct, max_price, allow_unproven]
@@ -544,19 +601,20 @@ components:
         min_reveal_pct: { type: number }
         max_price: { type: string }
         allow_unproven: { type: boolean }
-        feed: { type: [string, 'null'] }
-        max_mae_bps: { type: [number, 'null'] }
-        min_grade_coverage_pct: { type: [number, 'null'] }
-        min_hit_rate_pct: { type: [number, 'null'] }
+        feed: { type: [string, "null"] }
+        max_mae_bps: { type: [number, "null"] }
+        min_grade_coverage_pct: { type: [number, "null"] }
+        min_hit_rate_pct: { type: [number, "null"] }
     DiscoveryResponse:
       type: object
-      required: [agents, policy, selected_agent_id, decisions, status, pagination]
+      required:
+        [agents, policy, selected_agent_id, decisions, status, pagination]
       properties:
         agents:
           type: array
-          items: { $ref: '#/components/schemas/Provider' }
-        policy: { $ref: '#/components/schemas/DiscoveryPolicy' }
-        selected_agent_id: { type: [string, 'null'] }
+          items: { $ref: "#/components/schemas/Provider" }
+        policy: { $ref: "#/components/schemas/DiscoveryPolicy" }
+        selected_agent_id: { type: [string, "null"] }
         decisions:
           type: array
           items:
@@ -568,7 +626,7 @@ components:
                 type: array
                 items: { type: string }
         status: { type: string, enum: [selected, no_eligible_provider] }
-        pagination: { $ref: '#/components/schemas/Pagination' }
+        pagination: { $ref: "#/components/schemas/Pagination" }
     Pagination:
       type: object
       required: [offset, limit, total, next_offset]
@@ -576,25 +634,27 @@ components:
         offset: { type: integer, minimum: 0 }
         limit: { type: integer, minimum: 1, maximum: 100 }
         total: { type: integer, minimum: 0 }
-        next_offset: { type: [integer, 'null'], minimum: 0 }
+        next_offset: { type: [integer, "null"], minimum: 0 }
     BuyRequest:
       type: object
       additionalProperties: false
-      required: [request_id, buyer, agent_id, schema, price_feed_id, target_time]
+      required:
+        [request_id, buyer, agent_id, schema, price_feed_id, target_time]
       properties:
-        request_id: { type: string, pattern: '^0x[0-9a-f]{64}$' }
-        buyer: { type: string, pattern: '^0[.]0[.][1-9][0-9]{0,18}$' }
-        agent_id: { type: string, pattern: '^[1-9][0-9]{0,77}$' }
+        request_id: { type: string, pattern: "^0x[0-9a-f]{64}$" }
+        buyer: { type: string, pattern: "^0[.]0[.][1-9][0-9]{0,18}$" }
+        agent_id: { type: string, pattern: "^[1-9][0-9]{0,77}$" }
         schema: { type: string, const: defi.return_forecast.v1 }
         price_feed_id: { type: string }
         target_time: { type: integer, minimum: 0 }
     PaymentRequirements:
       type: object
-      required: [scheme, network, asset, amount, payTo, maxTimeoutSeconds, extra]
+      required:
+        [scheme, network, asset, amount, payTo, maxTimeoutSeconds, extra]
       properties:
         scheme: { type: string, const: exact }
         network: { type: string, const: hedera:testnet }
-        asset: { type: string, const: '0.0.0' }
+        asset: { type: string, const: "0.0.0" }
         amount: { type: string }
         payTo: { type: string }
         maxTimeoutSeconds: { type: integer, maximum: 120 }
@@ -607,8 +667,8 @@ components:
       type: object
       required: [request, requirements, created_at, expires_at]
       properties:
-        request: { $ref: '#/components/schemas/BuyRequest' }
-        requirements: { $ref: '#/components/schemas/PaymentRequirements' }
+        request: { $ref: "#/components/schemas/BuyRequest" }
+        requirements: { $ref: "#/components/schemas/PaymentRequirements" }
         created_at: { type: integer }
         expires_at: { type: integer }
     AuthScope:
@@ -616,40 +676,51 @@ components:
       additionalProperties: false
       required: [buyer, request_id, method, path, body_hash]
       properties:
-        buyer: { type: string, pattern: '^0[.]0[.][1-9][0-9]{0,18}$' }
-        request_id: { type: string, pattern: '^0x[0-9a-f]{64}$' }
+        buyer: { type: string, pattern: "^0[.]0[.][1-9][0-9]{0,18}$" }
+        request_id: { type: string, pattern: "^0x[0-9a-f]{64}$" }
         method: { type: string, enum: [GET, POST] }
-        path: { type: string, pattern: '^/v1/' }
-        body_hash: { type: string, pattern: '^[0-9a-f]{64}$' }
+        path: { type: string, pattern: "^/v1/" }
+        body_hash: { type: string, pattern: "^[0-9a-f]{64}$" }
     Challenge:
       type: object
       required: [id, message, expires_at]
       properties:
-        id: { type: string, pattern: '^0x[0-9a-f]{64}$' }
+        id: { type: string, pattern: "^0x[0-9a-f]{64}$" }
         message: { type: string }
         expires_at: { type: integer }
     AuthProof:
       type: object
       required: [challenge_id, signature]
       properties:
-        challenge_id: { type: string, pattern: '^0x[0-9a-f]{64}$' }
-        signature: { type: string, pattern: '^[0-9a-fA-F]{128}$' }
+        challenge_id: { type: string, pattern: "^0x[0-9a-f]{64}$" }
+        signature: { type: string, pattern: "^[0-9a-fA-F]{128}$" }
     PaymentPayload:
       type: object
       required: [x402Version, accepted, payload]
       properties:
         x402Version: { type: integer, const: 2 }
-        accepted: { $ref: '#/components/schemas/PaymentRequirements' }
+        accepted: { $ref: "#/components/schemas/PaymentRequirements" }
         payload:
           type: object
           additionalProperties: true
     Signal:
       type: object
       additionalProperties: false
-      required: [schema, request_id, agent_id, price_feed_id, issued_at, target_time, predicted_return_bps, model_version, distribution]
+      required:
+        [
+          schema,
+          request_id,
+          agent_id,
+          price_feed_id,
+          issued_at,
+          target_time,
+          predicted_return_bps,
+          model_version,
+          distribution,
+        ]
       properties:
         schema: { type: string, const: defi.return_forecast.v1 }
-        request_id: { type: string, pattern: '^0x[0-9a-f]{64}$' }
+        request_id: { type: string, pattern: "^0x[0-9a-f]{64}$" }
         agent_id: { type: string }
         price_feed_id: { type: string }
         issued_at: { type: integer }
@@ -662,28 +733,50 @@ components:
       description: Private buyer response. Returned only after authenticated purchase recovery or delivery.
       required: [signal, salt, hash]
       properties:
-        signal: { $ref: '#/components/schemas/Signal' }
+        signal: { $ref: "#/components/schemas/Signal" }
         salt: { type: string }
         hash: { type: string }
     Purchase:
       type: object
       required: [quote, status]
       properties:
-        quote: { $ref: '#/components/schemas/Quote' }
+        quote: { $ref: "#/components/schemas/Quote" }
         status:
           type: string
-          enum: [quoted, prepared, settlement_pending, paid, commit_pending, delivered, paid_commit_failed, payment_failed]
-        prepared: { $ref: '#/components/schemas/Prepared' }
-        payment: { $ref: '#/components/schemas/PaymentPayload' }
-        payment_ref: { type: [string, 'null'] }
+          enum:
+            [
+              quoted,
+              prepared,
+              settlement_pending,
+              paid,
+              commit_pending,
+              delivered,
+              paid_commit_failed,
+              payment_failed,
+            ]
+        prepared: { $ref: "#/components/schemas/Prepared" }
+        payment: { $ref: "#/components/schemas/PaymentPayload" }
+        payment_ref: { type: [string, "null"] }
         commitment:
           type: object
           properties:
             transaction_id: { type: string }
-        error: { type: [string, 'null'] }
+        error: { type: [string, "null"] }
     PublicPurchase:
       type: object
-      required: [request_id, agent_id, status, target_time, amount, asset, payment_ref, commitment_hash, commitment_transaction_id, error]
+      required:
+        [
+          request_id,
+          agent_id,
+          status,
+          target_time,
+          amount,
+          asset,
+          payment_ref,
+          commitment_hash,
+          commitment_transaction_id,
+          error,
+        ]
       properties:
         request_id: { type: string }
         agent_id: { type: string }
@@ -691,13 +784,29 @@ components:
         target_time: { type: integer }
         amount: { type: string }
         asset: { type: string }
-        payment_ref: { type: [string, 'null'] }
-        commitment_hash: { type: [string, 'null'] }
-        commitment_transaction_id: { type: [string, 'null'] }
-        error: { type: [string, 'null'] }
+        payment_ref: { type: [string, "null"] }
+        commitment_hash: { type: [string, "null"] }
+        commitment_transaction_id: { type: [string, "null"] }
+        error: { type: [string, "null"] }
     SampleEvidence:
       type: object
-      required: [request_id, agent_id, schema, price_feed_id, payment_mode, payment_status, payer, committed_at, target_time, revealed_at, grade, oracle_status, cohort_membership, evidence_links]
+      required:
+        [
+          request_id,
+          agent_id,
+          schema,
+          price_feed_id,
+          payment_mode,
+          payment_status,
+          payer,
+          committed_at,
+          target_time,
+          revealed_at,
+          grade,
+          oracle_status,
+          cohort_membership,
+          evidence_links,
+        ]
       properties:
         request_id: { type: string }
         agent_id: { type: string }
@@ -708,17 +817,29 @@ components:
         payer: { type: string }
         committed_at: { type: integer }
         target_time: { type: integer }
-        revealed_at: { type: [integer, 'null'] }
-        payment_verified_at: { type: [integer, 'null'] }
-        grade: { type: [object, 'null'], additionalProperties: true }
+        revealed_at: { type: [integer, "null"] }
+        payment_verified_at: { type: [integer, "null"] }
+        grade: { type: [object, "null"], additionalProperties: true }
         oracle_status: { type: string, enum: [pending, excluded, unavailable] }
-        oracle_status_at: { type: [integer, 'null'] }
-        cohort_membership: { type: string, enum: [eligible, pending_expiry_or_grace, outside_30_day_window, payment_pending, invalid_payment] }
-        evidence_links: { type: object, additionalProperties: { type: [string, 'null'] } }
+        oracle_status_at: { type: [integer, "null"] }
+        cohort_membership:
+          {
+            type: string,
+            enum:
+              [
+                eligible,
+                pending_expiry_or_grace,
+                outside_30_day_window,
+                payment_pending,
+                invalid_payment,
+              ],
+          }
+        evidence_links:
+          { type: object, additionalProperties: { type: [string, "null"] } }
         payment_ref: { type: string }
         commitment_hash: { type: string }
         transaction_hash: { type: string }
         native_payment_id: { type: string }
         reveal:
-          type: [object, 'null']
+          type: [object, "null"]
           additionalProperties: true

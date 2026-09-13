@@ -1,61 +1,83 @@
-# Under-five-minute demo script
+# ETHOnline demo recording plan — 3:30
 
-Use the existing public records for the reveal and oracle states.
-Do not run another paid request while reviewing evidence.
-If an operator chooses to create a fresh live record, `npm run buyer -- --allow-unproven` is the explicit exploratory command and can charge `0.001 HBAR`.
+This version uses existing public evidence. It does **not** create another paid request, wait for a forecast to expire, or expose secrets.
 
-The earlier expiring sample is request `0x1381ef3f939efd9b5ccf2d0a7439b36ef585b4a76a6dcda9c2b79de7f649950a` with target `1788652515`.
-The later sample is request `0x63c07d42013194b7d974e4a48b058bd23c8f3da1fb615fc7dc39e25796ebd5fc` with target `1788652979`.
-These timestamps are already in the public evidence and must not be presented as if the recording waited six minutes instantly.
+## Before recording
 
-## 0:00 to 0:30: open the service
+1. Start the service with `npm start` and confirm the public tunnel loads.
+2. In the UI, set **Minimum samples** to `3`, **Minimum reveal** to `100`, and **Maximum price** to `0.001`. If the indexer is fresh, the provider is selected; if it is stale, keep the rejection visible and use the fail-closed line below.
+3. Open these tabs in advance: marketplace, the current signal detail, and its grade transaction on HashScan.
+4. Close notifications and any tabs that show personal data. Never open `.env`, wallet keys, signed payloads, or `data/`.
+5. Record at 1080p or higher in a quiet room. Use your own voice; ETHGlobal rejects AI voiceovers, sped-up video, videos under 720p, and videos outside 2–4 minutes.
 
-Open [the temporary public service](https://valium-meant-atomic-articles.trycloudflare.com) and show the marketplace page.
-Say that it is Hedera testnet only and that the tunnel exists only while the local server and tunnel process on the operator's Mac remain alive.
+macOS: press `Shift–Command–5`, choose **Record Entire Screen**, select your microphone under **Options**, then record. Trim dead time in QuickTime without changing playback speed.
 
-## 0:30 to 1:15: show policy-driven discovery
+## Shot-by-shot script
 
-Open the discovery view and show the provider's three eligible paid samples, `100%` reveal coverage, one grade, and `33.3%` grade coverage.
-Point out that the default buyer still rejects the provider because the minimum history is five samples.
-Enable the explicit exploratory option in the UI and show the selection reason change.
-Explain that `allow_unproven` is a bounded policy override, not a claim of provider history.
+### 0:00–0:20 — Hook
 
-## 1:15 to 2:30: show the paid records
+**Show:** Marketplace hero and live metrics.
 
-Open the activity or history view and inspect the two legacy requests plus the current-ledger request.
-Show the payment and commitment transaction links for each record.
-Use the second payment's [HashScan record](https://hashscan.io/testnet/transaction/0.0.7162784%401788652616.723469092) to show the successful `0.001 HBAR` transfer from the buyer to the payee and the separate facilitator network fee.
-Show that the public record contains commitment and payment evidence without relying on a private key or wallet secret.
+**Say:**
 
-## 2:30 to 3:20: show independent reveal and grade states
+> AI agents can buy a market prediction in milliseconds, but how do they know it existed before the outcome—or that the seller did not hide the bad calls? Signal Market is a pay-per-forecast marketplace where every payment, commitment, reveal, and grade is independently inspectable on Hedera.
 
-Open both signal evidence dialogs.
-Show that all three records are publicly revealed and that reveal coverage is `100%`.
-Show that the two legacy grades are `oracle_unavailable` and the current record has actual return `-17` bps with `14` bps absolute error.
-Explain that reveal remains valid when the legacy oracle is unavailable and that the current grade is tied to the new verifier and ledger.
+### 0:20–0:55 — Product and buyer policy
 
-## 3:20 to 4:05: show public API evidence
+**Show:** The four metrics, then apply the prepared policy: 100% reveal, 3 samples, 0.001 HBAR.
 
-Open these read-only endpoints in a second tab:
+**Say:**
 
-```text
-/health
-/v1/agents
-/v1/agents/1/signals
-/v1/activity
-```
+> The buyer—not the seller—sets the trust policy. This provider has three real paid forecasts, all three publicly revealed, and one oracle-backed grade. Payment buys access to a schema-valid forecast; it never buys correctness, and no score controls the seller's payment.
 
-Point out `indexed_through`, `is_stale`, `reveal_pct`, `history_status`, and `oracle_unavailable_count`.
-Do not open or record private `.env` contents, wallet keys, signed payment payloads, or unrevealed response storage.
+If the UI reports stale metrics, add: **“The current Mirror snapshot is stale, so the buyer refuses to select even though the historical evidence remains inspectable. That is deliberate fail-closed behavior.”** Otherwise add: **“The current evidence is fresh, so this policy selects the provider.”**
 
-## 4:05 to 4:45: state the honest boundary
+### 0:55–1:30 — Hedera payment flow
 
-Say that the three payments, commitments, reveals, HCS receipts, discovery policy, current grade, and browser-verified public UI are live evidence.
-Say that Pyth historical proofs still fail on the official legacy testnet contract with `InvalidWormholeVaa`, while the receipt-backed project-operated verifier accepts one authentic proof and rejects a one-bit corruption.
-Show the current request `0x10d7ceb8b712edbe1738d0405e3b9b448610642353af3b4e672ca11b4a5158dc` as a completed paid lifecycle with verified payment, reveal, HCS, and grade evidence.
-Show the post-grace aggregate as three eligible samples, `100%` reveal coverage, one grade, `33.3%` grade coverage, `0.0%` directional hit rate, and `14.0` bps mean absolute error.
-Explain that the two legacy records remain `oracle_unavailable` historical evidence and are not regraded by the current verifier.
-P1 has deployed SMTT, vault, ledger, agent, and two manually finalized subscription records with conservation.
-Do not present the scheduled path as working: its live callback returned early on a two-second EVM timestamp skew, the local fix is not deployed, and the subscription forecast commitment/reveal/grade path was never broadcast.
-Say that the Agent Card is REST metadata and not full A2A RPC interoperability.
-End with the Sourcify exact runtime matches and the remaining creation-match, oracle, final-acceptance, and permanent-hosting limitations.
+**Show:** Inspect provider, then Network Activity. Open one payment link in HashScan.
+
+**Say:**
+
+> The service returns an x402 quote bound to the request. The agent verifies the Hedera network, HBAR asset, exact amount, payee, facilitator, and spending limit before signing. Blocky402 settles 0.001 HBAR. The service durably stores the response, commits its hash to SignalLedger, and returns the forecast and salt so the buyer can recompute it locally.
+
+### 1:30–2:15 — Inspect a complete signal
+
+**Show:** Return to Discover, open the current graded row, and scroll through payment, commitment, prediction, actual return, and grade. Open the commitment or grade transaction.
+
+**Say:**
+
+> This is a completed live request. It predicted minus 3 basis points. After expiry, the payload was revealed and an authenticated Pyth price recorded an actual return of minus 17 basis points—an absolute error of 14. These are separate on-chain states: an oracle failure can leave a forecast ungraded, but it cannot erase a valid payment or reveal.
+
+### 2:15–2:45 — Honest history
+
+**Show:** The three history rows and the oracle notice.
+
+**Say:**
+
+> The two earlier records are still revealed, but remain visibly marked oracle unavailable because their legacy Pyth contract rejected the upgraded proof format. We do not rewrite history or turn missing data into zero. The current ledger uses a receipt-verified, project-operated verifier built from pinned Pyth source.
+
+### 2:45–3:15 — Why Hedera / protocol view
+
+**Show:** The Protocol tab; briefly move through the four stages.
+
+**Say:**
+
+> Hedera is the trust layer, not decoration: HBAR settles the x402 payment, AgentRegistry publishes identity and metadata, SignalLedger anchors commitments and evidence, HCS carries audit receipts, and Mirror Node lets the indexer reconstruct public metrics. HCS-14 metadata also makes the service discoverable to other agents.
+
+### 3:15–3:30 — Close
+
+**Show:** Return to the hero and live metrics.
+
+**Say:**
+
+> Signal Market lets models stay private while their behavior becomes accountable. Forecasts stay private. Evidence does not.
+
+## Upload checklist
+
+- Duration is between 2:00 and 4:00; target 3:20–3:40.
+- Resolution is 1080p or higher; normal playback speed.
+- Voice is clear, with no music-only section or synthetic narration.
+- The live paid request, Hedera transaction, and working UI are visible.
+- No keys, account secrets, or unrevealed payloads appear in any frame.
+- Title: `Signal Market — Proof before trust for agent-bought forecasts`.
+- Description links the public GitHub repository and states `Built for ETHOnline 2026 · Hedera AI & Agentic Payments`.
