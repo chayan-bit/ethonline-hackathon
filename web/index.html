@@ -7,55 +7,77 @@
       name="description"
       content="An agent-native market for paid, committed, and independently verified DeFi forecasts on Hedera."
     />
-    <meta name="theme-color" content="#0b0d0c" />
+    <meta name="theme-color" content="#f6f7f2" />
     <title>Signal Market — Proof before trust</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="/style.css" />
     <script type="module" src="/app.js"></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
-    <aside class="sidebar">
+    <header class="sidebar">
       <a class="brand" href="#discover"
         ><span class="brand-symbol" aria-hidden="true"
           ><i></i><i></i><i></i></span
-        ><span>SIGNAL<span class="brand-light">MARKET</span></span></a
+        ><span class="brand-wordmark"
+          >Signal Market<small>Evidence exchange</small></span
+        ></a
       >
-      <div class="workspace-label">WORKSPACE</div>
       <nav aria-label="Main navigation">
         <a href="#discover" class="nav-link active" data-view="discover"
-          ><span aria-hidden="true">◈</span> Discover</a
+          >Discover</a
         ><a href="#activity" class="nav-link" data-view="activity"
-          ><span aria-hidden="true">↗</span> Network activity</a
-        ><a href="#protocol" class="nav-link" data-view="protocol"
-          ><span aria-hidden="true">⊞</span> The protocol</a
-        >
+          >Network activity</a
+        ><a href="#protocol" class="nav-link" data-view="protocol">Protocol</a>
       </nav>
       <div class="sidebar-bottom">
         <span class="live-dot"></span> Hedera testnet
-        <div>
-          Non-exclusive signal access.<br />No accuracy-linked payments.
-        </div>
       </div>
-    </aside>
+    </header>
     <main id="main-content">
       <header class="topbar">
         <div id="breadcrumb">Signal Market <span>/</span> Discover</div>
-        <span class="network-chip"><span class="live-dot"></span> TESTNET</span>
+        <span class="network-chip"
+          ><span class="live-dot"></span>Live evidence</span
+        >
       </header>
       <section class="view" id="discover-view">
         <div class="page-heading">
           <div>
-            <div class="eyebrow">LIVE ON HEDERA TESTNET</div>
-            <h1>Proof before trust.</h1>
+            <div class="eyebrow">A verifiable market for agent forecasts</div>
+            <h1>Every forecast<br />leaves a receipt.</h1>
             <p>
-              Agents buy private forecasts. The market makes every commitment,
-              reveal, and outcome independently inspectable.
+              Buy the signal now. Inspect its payment, commitment, reveal, and
+              outcome later—without seeing the model behind it.
             </p>
           </div>
           <button class="secondary" id="refresh" type="button">
-            ↻ Refresh
+            Refresh evidence
           </button>
         </div>
+        <ol class="proof-ribbon" aria-label="Verified signal lifecycle">
+          <li>
+            <span>Payment</span><strong>0.001 HBAR</strong
+            ><small>verified</small>
+          </li>
+          <li>
+            <span>Commitment</span><strong>Before outcome</strong
+            ><small>on SignalLedger</small>
+          </li>
+          <li>
+            <span>Disclosure</span><strong>3 of 3</strong
+            ><small>revealed</small>
+          </li>
+          <li>
+            <span>Oracle result</span><strong>14 bps</strong
+            ><small>absolute error</small>
+          </li>
+        </ol>
         <div class="notice" id="oracle-notice" hidden>
           <span class="notice-symbol">i</span>
           <div>
@@ -64,7 +86,7 @@
               Reading current and legacy oracle status.
             </p>
           </div>
-          <span class="notice-tag">ORACLE STATUS</span>
+          <span class="notice-tag">Oracle status</span>
         </div>
         <div class="stats-grid" aria-label="Marketplace statistics">
           <article class="stat">
@@ -168,7 +190,7 @@
         </div>
         <div class="section-heading history-heading">
           <h2 id="history-title">Recent x402 signal history</h2>
-          <a href="#activity">View activity ↗</a>
+          <a href="#activity">View activity</a>
         </div>
         <div class="table-wrap">
           <table>
@@ -204,8 +226,8 @@
       <section class="view" id="activity-view" hidden>
         <div class="page-heading">
           <div>
-            <div class="eyebrow">FOLLOW THE EVIDENCE</div>
-            <h1>Network activity.</h1>
+            <div class="eyebrow">The public audit trail</div>
+            <h1>Network activity</h1>
             <p>Payment, commitment, reveal, and grade are separate events.</p>
           </div>
         </div>
@@ -226,8 +248,8 @@
       <section class="view" id="protocol-view" hidden>
         <div class="page-heading">
           <div>
-            <div class="eyebrow">ACCESS FIRST. EVIDENCE AFTER.</div>
-            <h1>A record you can inspect.</h1>
+            <div class="eyebrow">Access first. Evidence after.</div>
+            <h1>How the record is made</h1>
             <p>
               Providers keep their models private. Buyers purchase their
               time-bound outputs.
@@ -284,7 +306,7 @@
             href="/v1/schema/defi.return_forecast.v1"
             target="_blank"
             rel="noopener noreferrer"
-            >Read the machine-readable schema ↗</a
+            >Read the machine-readable schema</a
           >
         </div>
       </section>
@@ -300,7 +322,7 @@
       aria-describedby="detail-description"
     >
       <div class="dialog-header">
-        <span class="eyebrow">PUBLIC EVIDENCE</span
+        <span class="eyebrow">Public evidence</span
         ><button
           class="icon-button"
           id="close-detail"
