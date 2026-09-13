@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: signal-market-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run compile
+    startCommand: node --import tsx src/server.ts
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_PATH
+        value: /tmp/signal-market/market.db
+      - key: HEDERA_OPERATOR_ID
+        sync: false
+      - key: HEDERA_OPERATOR_KEY
+        sync: false
+      - key: HEDERA_BUYER_ID
+        sync: false
+      - key: HEDERA_BUYER_KEY
+        sync: false
+      - key: PYTH_API_KEY
+        sync: false

@@ -148,7 +148,7 @@ const app = createApp({
   seller: () => ledgers.active.seller(),
   subscription: subscriptionContext,
 });
-app.listen(config.port, "127.0.0.1", () =>
+app.listen(config.port, "0.0.0.0", () =>
   console.info(
     JSON.stringify({
       event: "listening",

@@ -41,3 +41,8 @@ test('configuration rejects an active ledger absent from the declared cohorts', 
 test('configuration refuses a manually asserted compatible oracle status without bound evidence', () => {
   assert.throws(() => loadConfig({ PUBLIC_BASE_URL: 'http://localhost:3000', ORACLE_GRADING_STATUS: 'compatible' }), /oracle_attestation_required/);
 });
+
+test('configuration uses the Render service URL when no explicit public URL is set', () => {
+  const config = loadConfig({ RENDER_EXTERNAL_URL: 'https://signal-market-api.onrender.com' }, false);
+  assert.equal(config.baseUrl, 'https://signal-market-api.onrender.com');
+});

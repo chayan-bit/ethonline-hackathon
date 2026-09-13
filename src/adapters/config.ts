@@ -115,7 +115,9 @@ export function loadConfig(env = process.env, loadDefaultFiles = true) {
       throw new Error(`Invalid ${name}`);
     return value;
   };
-  const baseUrl = new URL(env.PUBLIC_BASE_URL ?? "http://localhost:3000");
+  const baseUrl = new URL(
+    env.PUBLIC_BASE_URL ?? env.RENDER_EXTERNAL_URL ?? "http://localhost:3000",
+  );
   if (
     baseUrl.protocol !== "https:" &&
     !(
