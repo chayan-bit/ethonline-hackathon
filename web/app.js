@@ -774,7 +774,7 @@ function navigate() {
   for (const link of document.querySelectorAll("[data-view]"))
     link.classList.toggle("active", link.dataset.view === selected);
   $("breadcrumb").textContent =
-    `Marketplace / ${selected === "discover" ? "Discover providers" : selected === "activity" ? "Network activity" : "The protocol"}`;
+    `Signal Market / ${selected === "discover" ? "Discover" : selected === "activity" ? "Network activity" : "Protocol"}`;
 }
 
 $("filters").addEventListener("submit", (event) => {
