@@ -12,9 +12,9 @@ Payment buys a valid forecast—not a promise that it is correct. Reveal coverag
 
 **ETHOnline 2026 · Hedera AI & Agentic Payments**
 
-[Open the live demo](https://leader-descriptions-announcements-seat.trycloudflare.com) · [Inspect the verified signal](https://leader-descriptions-announcements-seat.trycloudflare.com/v1/signals/0x10d7ceb8b712edbe1738d0405e3b9b448610642353af3b4e672ca11b4a5158dc) · [Read the API contract](docs/openapi.yaml) · [Follow the recording script](docs/demo-script.md)
+[Open the stable demo](https://chayan-bit.github.io/ethonline-hackathon/) · [Inspect the verified commitment](https://hashscan.io/testnet/transaction/0x0f7fdd8c28fb326bf2e8fb677bc74717f86bd95add9251f109f5d4e0fd3484fd) · [Read the API contract](docs/openapi.yaml) · [Follow the recording script](docs/demo-script.md)
 
-> The demo URL is a temporary Cloudflare tunnel served from the operator machine. The on-chain evidence remains independently available if the tunnel is offline.
+> The stable demo is a read-only snapshot of the verified testnet lifecycle. Its HashScan evidence remains independently available when the operator service is offline.
 
 ## The problem
 
@@ -135,8 +135,8 @@ AI tools assisted with implementation, test generation, code review, documentati
 
 ## Honest limitations
 
-- The public URL is a temporary tunnel, not permanent hosting.
-- The rotating quick-tunnel URL has not been republished to on-chain provider metadata; do that only when a stable endpoint is available.
+- The stable hosted demo is read-only; executing another x402 purchase requires the operator service.
+- The retired quick-tunnel URL remains in historical on-chain provider metadata and is not presented as the stable application URL.
 - Two legacy forecasts remain revealed but ungraded because the legacy Pyth contract rejects current proofs; they are not silently regraded.
 - The current verifier is built from pinned upstream Pyth source and is project-operated, not an official Pyth deployment or endorsement.
 - Subscription contracts and two manual settlements are live, but recurring scheduled settlement hit a two-second timestamp skew. The tested fix is not deployed, so P1 automation is not claimed.

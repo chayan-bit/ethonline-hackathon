@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
+import { demoApi } from "./demo-data.js";
 
 const source = await readFile(new URL("./app.js", import.meta.url), "utf8");
 const markup = await readFile(new URL("./index.html", import.meta.url), "utf8");
@@ -83,5 +84,8 @@ assert.doesNotMatch(
   /↗/,
   "interaction labels do not use decorative arrow clutter",
 );
+assert.equal(demoApi("/v1/agents").agents[0].metrics.reveal_pct, 100);
+assert.equal(demoApi("/v1/agents/1/signals").samples.length, 3);
+assert.match(markup, /href="\.\/style\.css"/, "assets work below a Pages path");
 
-console.log("UI checks: 10/10 passed");
+console.log("UI checks: 13/13 passed");

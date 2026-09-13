@@ -4,7 +4,7 @@ This version uses existing public evidence. It does **not** create another paid 
 
 ## Before recording
 
-1. Start the service with `npm start` and confirm the public tunnel loads.
+1. Open the [stable hosted demo](https://chayan-bit.github.io/ethonline-hackathon/) and confirm the verified snapshot loads.
 2. In the UI, set **Minimum samples** to `3`, **Minimum reveal** to `100`, and **Maximum price** to `0.001`. If the indexer is fresh, the provider is selected; if it is stale, keep the rejection visible and use the fail-closed line below.
 3. Open these tabs in advance: marketplace, the current signal detail, and its grade transaction on HashScan.
 4. Close notifications and any tabs that show personal data. Never open `.env`, wallet keys, signed payloads, or `data/`.

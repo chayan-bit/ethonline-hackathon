@@ -8,9 +8,7 @@ info:
     does not claim full A2A RPC interoperability.
 servers:
   - url: http://127.0.0.1:3000
-    description: Local service
-  - url: https://leader-descriptions-announcements-seat.trycloudflare.com
-    description: Temporary public quick tunnel
+    description: Local write-capable operator service; the stable hosted UI is a read-only snapshot
 tags:
   - name: public
   - name: purchase

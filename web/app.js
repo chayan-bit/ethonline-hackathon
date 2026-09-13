@@ -1,3 +1,5 @@
+import { demoApi, isStaticDemo } from "./demo-data.js";
+
 const $ = (id) => document.getElementById(id);
 const node = (tag, text, className) =>
   Object.assign(document.createElement(tag), {
@@ -6,6 +8,8 @@ const node = (tag, text, className) =>
   });
 const HBAR_TINYBARS = 100_000_000n;
 const DEFAULT_REVEAL_GRACE_SECONDS = 300;
+const SNAPSHOT_URL =
+  "https://github.com/chayan-bit/ethonline-hackathon/blob/main/docs/evidence/live-api-snapshot.json";
 
 const formatPct = (value, unknown = false) => {
   if (value === null || value === undefined) return unknown ? "Unknown" : "—";
@@ -90,6 +94,7 @@ let currentPaymentMode = "x402";
 let requestedFocusId;
 
 async function api(path, options = {}) {
+  if (isStaticDemo) return demoApi(path);
   const response = await fetch(path, options);
   if (!response.ok)
     throw new Error(
@@ -466,10 +471,19 @@ function providerDetail(agent, focusKey) {
       ["Oracle excluded", String(m.oracle_excluded_count)],
       ["Pricing", `${formatHbar(agent.price)} per forecast`],
       ["Distribution", "Non-exclusive"],
-      ["Metadata", link("Verified metadata", `/v1/metadata/${agent.agent_id}`)],
+      [
+        "Metadata",
+        link(
+          "Verified metadata",
+          isStaticDemo ? SNAPSHOT_URL : `/v1/metadata/${agent.agent_id}`,
+        ),
+      ],
       [
         "Metrics",
-        link("Machine-readable metrics", `/v1/agents/${agent.agent_id}`),
+        link(
+          "Machine-readable metrics",
+          isStaticDemo ? SNAPSHOT_URL : `/v1/agents/${agent.agent_id}`,
+        ),
       ],
     ],
     m,
@@ -803,6 +817,13 @@ $("detail").addEventListener("close", () => {
   opener?.focus();
 });
 window.addEventListener("hashchange", navigate);
+if (isStaticDemo) {
+  document.querySelector(".network-chip").lastChild.textContent =
+    "Verified testnet snapshot";
+  $("refresh").textContent = "Refresh snapshot";
+  $("schema-link").href =
+    "https://github.com/chayan-bit/ethonline-hackathon/blob/main/docs/openapi.yaml";
+}
 syncPolicyControls($("payment-mode").value);
 navigate();
 void refresh();
